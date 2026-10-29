@@ -328,7 +328,7 @@ public static class MapCache
             {
                 string path = $"{MapUtil.MapsFolder}/{map.Name}";
 
-                if (map.Cover == Map.DefaultCover && File.Exists($"{path}/cover.png"))
+                if (File.Exists($"{path}/cover.png"))
                 {
                     byte[] coverBuffer = File.ReadAllBytes($"{path}/cover.png");
                     if (coverBuffer == null || coverBuffer.Length == 0)
@@ -343,7 +343,7 @@ public static class MapCache
                         Callable
                             .From(() =>
                             {
-                                if (MapManager.Maps.Contains(map))
+                                if (MapManager.Maps.Contains(map) && map.Cover == Map.DefaultCover)
                                 {
                                     map.Cover = ImageTexture.CreateFromImage(image);
                                 }

@@ -27,6 +27,7 @@ public partial class Game : BaseScene
     public static Game Instance;
     public static Attempt Attempt;
     public static bool StartQueued = false;
+    public static bool AttractReplay { get; internal set; }
     private static double fadeoutToggleValue = -1;
 
     public override void _Ready()
@@ -46,7 +47,11 @@ public partial class Game : BaseScene
 
         PlayerInputController.OnMouseMove += (relative, absolute) =>
         {
-            if (!Runner.Playing || Attempt.IsReplay || Attempt.Modifiers.Exists(mod => mod is AutoplayModifier))
+            if (
+                !Runner.Playing
+                || Attempt.IsReplay
+                || Attempt.Modifiers.Exists(mod => mod is AutoplayModifier)
+            )
                 return;
 
             if (Attempt.Settings.AbsoluteInput)
@@ -114,8 +119,6 @@ public partial class Game : BaseScene
             }
             else
             {
-                if (Lobby.Players.Count > 1)
-                    return;
                 Runner.Skip();
 
                 // Space To Pause
@@ -151,10 +154,31 @@ public partial class Game : BaseScene
         PlayerInputController.OnRestartPressed += Restart;
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (!AttractReplay || !IsAttractExitInput(@event))
+            return;
+
+        AttractReplay = false;
+        GetViewport().SetInputAsHandled();
+        Runner.Stop(false);
+        SceneManager.Load("res://scenes/main_menu.tscn");
+    }
+
+    private static bool IsAttractExitInput(InputEvent @event)
+    {
+        if (@event is InputEventKey key && key.Pressed)
+            return true;
+        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
+            return true;
+        if (@event is InputEventMouseMotion mouseMotion && mouseMotion.Relative.LengthSquared() >= 16)
+            return true;
+        return @event is InputEventScreenTouch screenTouch && screenTouch.Pressed;
+    }
+
     public override void Load()
     {
         base.Load();
-
         DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
 
         MenuCursor.Instance.UpdateVisible(false, false);
@@ -164,7 +188,9 @@ public partial class Game : BaseScene
         var focused = SceneManager.Root.GetViewport().GuiGetFocusOwner();
         focused?.ReleaseFocus();
 
-        Input.MouseMode = Attempt.Settings.AbsoluteInput || Attempt.IsReplay ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
+        Input.MouseMode = Attempt.Settings.AbsoluteInput || Attempt.IsReplay
+            ? Input.MouseModeEnum.Visible
+            : Input.MouseModeEnum.Captured;
         Input.UseAccumulatedInput = false;
 
         Runner.Attempt = Attempt;
@@ -215,18 +241,49 @@ public partial class Game : BaseScene
         CameraMode cameraMode,
         List<Modifier> mods,
         string[] players = null,
-        Replay[] replays = null
+        Replay[] replays = null,
+        bool campaignStage = false
     )
     {
         if (StartQueued)
             return;
 
-        StartQueued = true;
-
         var parsedMap = MapParser.Decode(map.FolderPath, Rhythia.AudioFilePath);
+        if (!Rhythia.TempMode && replays == null && !ArcadeService.Instance.TryConsumeCredit())
+            return;
+
+        if (campaignStage)
+        {
+            if (!CampaignManager.BeginStage(map))
+            {
+                _ = ToastNotification.Notify("That campaign stage is locked or unavailable.");
+                return;
+            }
+        }
+        else
+        {
+            CampaignManager.CancelActiveStage();
+        }
+
+        StartQueued = true;
         Attempt = new(parsedMap, speed, startFrom, cameraMode, mods, players, replays);
 
         SceneManager.Load("res://scenes/game.tscn");
+    }
+
+    public static bool PlayAttractReplay(Map map, Replay replay)
+    {
+        if (StartQueued)
+            return false;
+
+        AttractReplay = true;
+        Play(map, replay.Speed, replay.StartFrom, replay.CameraMode, replay.Modifiers, null, [replay]);
+
+        if (StartQueued)
+            return true;
+
+        AttractReplay = false;
+        return false;
     }
 
     public void Restart()
@@ -245,7 +302,6 @@ public partial class Game : BaseScene
             oldAttempt.Players,
             oldAttempt.Replays
         );
-
         SceneManager.ReloadCurrentScene();
     }
 }

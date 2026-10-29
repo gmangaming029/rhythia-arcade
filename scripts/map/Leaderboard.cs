@@ -65,6 +65,47 @@ public struct Leaderboard
         this = new(mapID, File.ReadAllBytes(path));
     }
 
+    public static bool TryRead(string path, out List<Score> scores)
+    {
+        scores = [];
+        if (!File.Exists(path))
+            return false;
+
+        try
+        {
+            byte[] file = File.ReadAllBytes(path);
+            if (file.Length < 36)
+                return false;
+
+            int bodyLength = file.Length - 32;
+            byte[] body = file[..bodyLength];
+            byte[] expectedHash = SHA256.HashData(body);
+            if (!CryptographicOperations.FixedTimeEquals(expectedHash, file[bodyLength..]))
+                return false;
+
+            FileParser parser = new(body);
+            uint scoreCount = parser.GetUInt32();
+            if (scoreCount > (bodyLength - 4) / 4)
+                return false;
+
+            for (uint index = 0; index < scoreCount; index++)
+            {
+                uint scoreLength = parser.GetUInt32();
+                if (scoreLength > bodyLength - parser.Pointer)
+                    return false;
+
+                scores.Add(new Score(parser.Get((int)scoreLength)));
+            }
+
+            return parser.Pointer == bodyLength;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or OverflowException)
+        {
+            scores = [];
+            return false;
+        }
+    }
+
     public void Add(Score score)
     {
         Scores.Add(score);

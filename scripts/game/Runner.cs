@@ -78,6 +78,7 @@ public partial class Runner : Node3D
 
         if (!Playing)
             return;
+
         if (firstFrame)
         {
             firstFrame = false;
@@ -501,6 +502,11 @@ public partial class Runner : Node3D
                 }
 
                 Leaderboard leaderboard = new(Attempt.Map.Name, $"{Constants.USER_FOLDER}/pbs/{Attempt.Map.Name}");
+                ulong previousTopScore = leaderboard
+                    .Scores.Where(score => score.Qualifies)
+                    .Select(score => score.Value)
+                    .DefaultIfEmpty(0UL)
+                    .Max();
 
                 leaderboard.Add(
                     new(
@@ -517,6 +523,12 @@ public partial class Runner : Node3D
                     )
                 );
                 leaderboard.Save();
+
+                if (Attempt.Qualifies && Attempt.Score > previousTopScore)
+                {
+                    ArcadeService.Instance.AddCredits(1);
+                    _ = ToastNotification.Notify("New map top score! You earned 1 free credit.");
+                }
 
                 if (Attempt.Qualifies)
                 {
@@ -542,7 +554,15 @@ public partial class Runner : Node3D
 
         if (results)
         {
-            SceneManager.Load("res://scenes/results.tscn");
+            CampaignManager.FinishStage(
+                Attempt,
+                !Attempt.IsReplay && !autoplayEnabled && Attempt.StartFrom == 0 && Attempt.Alive && Attempt.Qualifies
+            );
+        }
+
+        if (results)
+        {
+            SceneManager.Load(Game.AttractReplay ? "res://scenes/main_menu.tscn" : "res://scenes/results.tscn");
         }
     }
 

@@ -61,7 +61,18 @@ public partial class AudioSpectrum : Panel
 
     public override void _Process(double delta)
     {
+        if (!float.IsFinite(Size.X) || !float.IsFinite(Size.Y) || Size.X <= 0 || Size.Y <= 0)
+        {
+            barCount = 0;
+            return;
+        }
+
         barCount = (int)Math.Round((Size.X - BarSize) / (BarSize + BarGap));
+        if (barCount < 2)
+        {
+            barCount = 0;
+            return;
+        }
 
         if (magnitudes.Length != barCount)
         {
@@ -93,17 +104,18 @@ public partial class AudioSpectrum : Panel
 
     public override void _Draw()
     {
-        if (barCount == 0)
+        if (barCount < 2 || !float.IsFinite(Size.X) || !float.IsFinite(Size.Y) || Size.X <= 0 || Size.Y <= 0)
         {
             return;
         }
 
         Vector2 size = new(Size.X - BarSize, Size.Y);
+        float minimumScale = Mathf.Clamp(BarMinSize / size.Y, 0, 1);
         Vector2[] points = new Vector2[barCount * 2];
 
         for (int i = 0; i < barCount; i++)
         {
-            float scale = Math.Clamp(magnitudes[i] / ceiling, BarMinSize / size.Y, 1);
+            float scale = Math.Clamp(magnitudes[i] / ceiling, minimumScale, 1);
             Vector2 start = new(i / (barCount - 1f) * size.X + BarSize / 2, Align * (1 - scale) * size.Y);
             Vector2 end = start + Vector2.Down * scale * size.Y;
 

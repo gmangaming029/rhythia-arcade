@@ -176,7 +176,7 @@ public partial class SettingsProfile
     public SettingsItem<double> CursorRotation { get; private set; }
 
     /// <summary>
-    /// Toggles a trial for your cursor
+    /// Toggles a trail for your cursor
     /// </summary>
     [Order]
     public SettingsItem<bool> CursorTrail { get; private set; }
@@ -858,7 +858,7 @@ public partial class SettingsProfile
             },
         };
 
-        CursorTrail = new(false)
+        CursorTrail = new(true)
         {
             Id = "CursorTrail",
             Title = "Cursor Trail",

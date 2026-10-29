@@ -209,7 +209,10 @@ public partial class ReplayManager : Node
 
             if (Runner.Attempt.Progress > ReplayLength && Runner.Playing)
             {
-                TogglePause();
+                if (Game.AttractReplay)
+                    Runner.Stop();
+                else
+                    TogglePause();
             }
         }
 

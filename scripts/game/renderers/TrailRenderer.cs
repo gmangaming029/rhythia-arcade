@@ -14,9 +14,10 @@ public partial class TrailRenderer : Node
     [Export]
     private Runner runner;
 
-    private const float trail_spawn_rate = 240;
-    private const float trail_min_detail = 0;
-    private const float trail_max_detail = 100f;
+    private const float trail_min_spawn_rate = 60f;
+    private const float trail_max_spawn_rate = 240f;
+    private const float trail_min_detail = 0f;
+    private const float trail_max_detail = 500f;
 
     private List<CursorTrailData> activeTrailsData = [];
     private double deltaAccumulator;
@@ -47,12 +48,10 @@ public partial class TrailRenderer : Node
     private void processTrailSpawning(double delta, ulong now)
     {
         float trailDetail = (float)Mathf.Clamp(SettingsManager.Instance.Settings.TrailDetail.Value, trail_min_detail, trail_max_detail);
-        float wantedEmission = trailDetail / trail_max_detail;
-
-        float rate = wantedEmission * trail_spawn_rate;
-        if (rate <= 0f)
+        if (trailDetail <= trail_min_detail)
             return;
 
+        float rate = Mathf.Lerp(trail_min_spawn_rate, trail_max_spawn_rate, trailDetail / trail_max_detail);
         double interval = 1.0 / rate;
         deltaAccumulator += delta;
 
