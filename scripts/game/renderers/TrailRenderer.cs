@@ -14,13 +14,14 @@ public partial class TrailRenderer : Node
     [Export]
     private Runner runner;
 
-    private const float trail_min_spawn_rate = 60f;
-    private const float trail_max_spawn_rate = 240f;
     private const float trail_min_detail = 0f;
     private const float trail_max_detail = 500f;
+    private const float trail_detail_spacing_scale = 10f;
 
     private List<CursorTrailData> activeTrailsData = [];
-    private double deltaAccumulator;
+    private Vector2 lastCursorPosition;
+    private float distanceSinceLastSpawn;
+    private bool hasLastCursorPosition;
 
     public override void _ExitTree()
     {
@@ -32,35 +33,61 @@ public partial class TrailRenderer : Node
     public override void _Process(double delta)
     {
         if (!runner.Attempt.Settings.CursorTrail || !runner.Playing)
+        {
+            lastCursorPosition = runner.Attempt.CursorPosition;
+            distanceSinceLastSpawn = 0;
+            hasLastCursorPosition = true;
             return;
-        updateCursorTrail(delta);
+        }
+        updateCursorTrail();
     }
 
-    private void updateCursorTrail(double delta)
+    private void updateCursorTrail()
     {
         ulong now = Time.GetTicksUsec();
 
-        processTrailSpawning(delta, now);
+        processTrailSpawning(now);
         cullExpiredTrails(now);
         updateTrailRendering(now);
     }
 
-    private void processTrailSpawning(double delta, ulong now)
+    private void processTrailSpawning(ulong now)
     {
+        Vector2 cursorPosition = runner.Attempt.CursorPosition;
+        if (!hasLastCursorPosition)
+        {
+            lastCursorPosition = cursorPosition;
+            hasLastCursorPosition = true;
+            return;
+        }
+
         float trailDetail = (float)Mathf.Clamp(SettingsManager.Instance.Settings.TrailDetail.Value, trail_min_detail, trail_max_detail);
         if (trailDetail <= trail_min_detail)
+        {
+            lastCursorPosition = cursorPosition;
+            distanceSinceLastSpawn = 0;
+            return;
+        }
+
+        float spawnDistance = trail_detail_spacing_scale / trailDetail;
+        Vector2 movement = cursorPosition - lastCursorPosition;
+        float distance = movement.Length();
+        if (distance <= 0)
             return;
 
-        float rate = Mathf.Lerp(trail_min_spawn_rate, trail_max_spawn_rate, trailDetail / trail_max_detail);
-        double interval = 1.0 / rate;
-        deltaAccumulator += delta;
+        Vector2 direction = movement / distance;
+        float distanceToNextSpawn = spawnDistance - distanceSinceLastSpawn;
+        while (distance >= distanceToNextSpawn)
+        {
+            lastCursorPosition += direction * distanceToNextSpawn;
+            activeTrailsData.Add(new CursorTrailData(time: now, position: lastCursorPosition, rotation: cursor.Rotation.Z));
+            distance -= distanceToNextSpawn;
+            distanceToNextSpawn = spawnDistance;
+            distanceSinceLastSpawn = 0;
+        }
 
-        int steps = (int)(deltaAccumulator / interval);
-        if (steps <= 0)
-            return;
-
-        activeTrailsData.Add(new CursorTrailData(time: now, position: runner.Attempt.CursorPosition, rotation: cursor.Rotation.Z));
-        deltaAccumulator -= interval * steps;
+        distanceSinceLastSpawn += distance;
+        lastCursorPosition = cursorPosition;
     }
 
     private void cullExpiredTrails(ulong now)

@@ -188,7 +188,7 @@ public partial class SettingsProfile
     public SettingsItem<double> TrailTime { get; private set; }
 
     /// <summary>
-    /// Adjusts the detail for the trail
+    /// Adjusts the distance between cursor trail segments
     /// </summary>
     [Order]
     public SettingsItem<double> TrailDetail { get; private set; }
@@ -396,6 +396,12 @@ public partial class SettingsProfile
     /// Toggles the framerate counter in the corner
     /// </summary>
     public SettingsItem<bool> DisplayFPS { get; private set; }
+
+    [Order]
+    /// <summary>
+    /// Enables the optional online chart repository in the Play menu
+    /// </summary>
+    public SettingsItem<bool> EnableChartRepository { get; private set; }
 
     [Order]
     /// <summary>
@@ -884,7 +890,7 @@ public partial class SettingsProfile
         {
             Id = "TrailDetail",
             Title = "Cursor Trail Detail",
-            Description = "Adjusts the detail for the trail, a high value may impact performance",
+            Description = "Adjusts the distance between cursor trail segments; higher values create a denser trail and may impact performance",
             Section = SettingsSection.Visual,
             Slider = new()
             {
@@ -1429,6 +1435,14 @@ public partial class SettingsProfile
             Id = "DisplayFPS",
             Title = "Display FPS",
             Description = "Toggles the framerate counter in the corner",
+            Section = SettingsSection.Other,
+        };
+
+        EnableChartRepository = new(false)
+        {
+            Id = "EnableChartRepository",
+            Title = "Online Chart Repository",
+            Description = "Enables the optional online chart browser in the Play menu; leave off for the normal offline chart experience",
             Section = SettingsSection.Other,
         };
 

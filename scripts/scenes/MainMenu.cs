@@ -87,17 +87,26 @@ public partial class MainMenu : BaseScene
         repositoryBrowser = new RepositoryBrowser { Name = "RepositoryBrowser" };
         AddChild(repositoryBrowser);
 
+        SettingsItem<bool> repositorySetting = SettingsManager.Instance.Settings.EnableChartRepository;
         Button repositoryButton = new()
         {
             Name = "Repository",
             Text = "Online Charts",
+            Visible = repositorySetting.Value,
             CustomMinimumSize = new Vector2(0, 36),
             FocusMode = Control.FocusModeEnum.None,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             Theme = toolbar.Theme
         };
         repositoryButton.AddThemeColorOverride("font_color", Colors.White);
-        repositoryButton.Pressed += repositoryBrowser.Open;
+        repositoryButton.Pressed += repositoryBrowser.Toggle;
+        repositorySetting.Updated += value =>
+        {
+            bool enabled = (bool)value;
+            repositoryButton.Visible = enabled;
+            if (!enabled)
+                repositoryBrowser.Hide();
+        };
         toolbar.AddChild(repositoryButton);
     }
 

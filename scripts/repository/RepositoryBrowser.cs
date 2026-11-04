@@ -36,6 +36,7 @@ public partial class RepositoryBrowser : Window
         MinSize = new Vector2I(740, 500);
         CloseRequested += Hide;
         BuildUi();
+        Hide();
         signInButton.Disabled = !RepositoryOAuth.IsConfigured;
         statusLabel.Text = RepositoryOAuth.IsConfigured
             ? "Sign in to browse the repository."
@@ -47,6 +48,14 @@ public partial class RepositoryBrowser : Window
         PopupCentered();
         if (session?.IsValid == true && client is not null)
             _ = BrowseAsync();
+    }
+
+    public void Toggle()
+    {
+        if (Visible)
+            Hide();
+        else
+            Open();
     }
 
     public override void _ExitTree()
