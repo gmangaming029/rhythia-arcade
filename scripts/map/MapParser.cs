@@ -29,7 +29,7 @@ public partial class MapParser : Node
 
     public static bool IsValidExt(string ext) => ext == "phxm" || ext == "sspm" || ext == "txt" || ext == "rhm";
 
-    public static async Task BulkImport(string[] files, bool notify = false)
+    public static async Task BulkImport(string[] files, bool notify = false, bool throwOnFailure = false)
     {
         if (files.Length == 0 || files == null)
             return;
@@ -37,11 +37,12 @@ public partial class MapParser : Node
         if (notify)
             _ = ToastNotification.Notify($"Importing {files.Length} map(s)");
 
+        int corrupted = 0;
+        var failures = new ConcurrentQueue<Exception>();
         await Task.Run(() =>
         {
             double start = Time.GetTicksUsec();
             int good = 0;
-            int corrupted = 0;
             var maps = new ConcurrentBag<Map>();
 
             Callable.From(() => Instance.EmitSignal(SignalName.MapsImportStarted)).CallDeferred();
@@ -63,8 +64,10 @@ public partial class MapParser : Node
                         System.Threading.Interlocked.Increment(ref good);
                         Callable.From(() => Instance.EmitSignal(SignalName.MapImported, map)).CallDeferred();
                     }
-                    catch
+                    catch (Exception exception)
                     {
+                        if (throwOnFailure)
+                            failures.Enqueue(exception);
                         System.Threading.Interlocked.Increment(ref corrupted);
                     }
                 }
@@ -78,6 +81,11 @@ public partial class MapParser : Node
         SoundManager.UpdateJukeboxQueue();
         if (notify)
             _ = ToastNotification.Notify($"Finished importing {files.Length} map(s)");
+        if (throwOnFailure && corrupted > 0)
+        {
+            failures.TryPeek(out Exception failure);
+            throw new InvalidDataException($"Failed to import {corrupted} chart file(s).", failure);
+        }
     }
 
     public static void ExportEncode(Map map)

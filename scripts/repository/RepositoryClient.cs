@@ -1,10 +1,13 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -24,6 +27,9 @@ public sealed class RepositoryClient : IDisposable
     {
         if (apiBaseUri is null || !apiBaseUri.IsAbsoluteUri)
             throw new ArgumentException("Repository API base URL must be absolute.", nameof(apiBaseUri));
+        if (apiBaseUri.Scheme != Uri.UriSchemeHttps &&
+            !(apiBaseUri.Scheme == Uri.UriSchemeHttp && (apiBaseUri.IsLoopback || string.Equals(apiBaseUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))))
+            throw new ArgumentException("Repository access tokens require HTTPS except for localhost development.", nameof(apiBaseUri));
 
         getAccessToken = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
         http = handler is null ? new HttpClient() : new HttpClient(handler);
@@ -36,8 +42,12 @@ public sealed class RepositoryClient : IDisposable
     public static Uri GetConfiguredApiBaseUri()
     {
         string configured = Environment.GetEnvironmentVariable("RHYTHIA_REPOSITORY_API") ?? "http://localhost:5080";
-        if (!Uri.TryCreate(configured, UriKind.Absolute, out Uri uri) || uri.Scheme is not ("http" or "https"))
+        if (!Uri.TryCreate(configured, UriKind.Absolute, out Uri? uri) || uri is null ||
+            uri.Scheme is not ("http" or "https"))
             throw new InvalidOperationException("RHYTHIA_REPOSITORY_API must be an absolute HTTP(S) URL.");
+        if (uri.Scheme != Uri.UriSchemeHttps &&
+            !(uri.Scheme == Uri.UriSchemeHttp && (uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))))
+            throw new InvalidOperationException("Repository access tokens may only be sent over HTTPS outside localhost development.");
         return uri;
     }
 
@@ -90,6 +100,10 @@ public sealed class RepositoryClient : IDisposable
         if (chart is null) throw new ArgumentNullException(nameof(chart));
         if (string.IsNullOrWhiteSpace(chart.Sha256) || chart.Sha256.Length != 64)
             throw new InvalidDataException("Repository response did not include a valid SHA-256 checksum.");
+        if (!Guid.TryParseExact(chart.ChartId, "N", out _) ||
+            string.IsNullOrWhiteSpace(chart.VersionId) ||
+            chart.VersionId.Any(character => !char.IsLetterOrDigit(character) && character is not '-' and not '_'))
+            throw new InvalidDataException("Repository returned an invalid chart or version identifier.");
 
         string relative = $"v1/charts/{Uri.EscapeDataString(chart.ChartId)}/versions/{Uri.EscapeDataString(chart.VersionId)}/download";
         using var request = await CreateAuthorizedRequestAsync(HttpMethod.Get, relative, cancellationToken);
@@ -151,7 +165,7 @@ public sealed class RepositoryClient : IDisposable
         try
         {
             await ExtractChartFileAsync(packagePath, extractedPath, cancellationToken);
-            await MapParser.BulkImport([extractedPath], notify: true);
+            await MapParser.BulkImport([extractedPath], notify: true, throwOnFailure: true);
         }
         finally
         {
@@ -172,7 +186,7 @@ public sealed class RepositoryClient : IDisposable
         string chartPath = manifest.ChartDataPath ?? "";
         if (string.IsNullOrWhiteSpace(chartPath) || chartPath.StartsWith("/", StringComparison.Ordinal) ||
             chartPath.Contains('\\') || chartPath.Contains(':') ||
-            System.Linq.Enumerable.Any(chartPath.Split('/'), part => part is "" or "." or ".."))
+            chartPath.Split('/').Any(part => part is "" or "." or ".."))
             throw new InvalidDataException("Repository package manifest contains an unsafe chartDataPath.");
 
         string extension = Path.GetExtension(chartPath);
@@ -234,4 +248,5 @@ public sealed class RepositoryChart
     public long SizeBytes { get; set; }
     public string Sha256 { get; set; } = "";
     public DateTimeOffset UpdatedAt { get; set; }
+    public string RankedState { get; set; } = "unranked";
 }

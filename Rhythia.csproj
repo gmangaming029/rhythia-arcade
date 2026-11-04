@@ -8,6 +8,7 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <EmbeddedResource Include="arcade-controller.html" LogicalName="Rhythia.arcade-controller.html" />
+    <Compile Remove="services\**\*.cs" />
   </ItemGroup>
   <PropertyGroup>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

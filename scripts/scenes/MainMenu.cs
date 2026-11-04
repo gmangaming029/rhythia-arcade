@@ -34,6 +34,7 @@ public partial class MainMenu : BaseScene
     private Panel campaignMenu;
     private VBoxContainer campaignStages;
     private Label campaignProgress;
+    private RepositoryBrowser repositoryBrowser;
 
     public override void _Ready()
     {
@@ -54,6 +55,7 @@ public partial class MainMenu : BaseScene
         setupArcadeStatus();
         setupAttractMode();
         setupCampaignMenu();
+        setupRepositoryBrowser();
 
         CurrentMenu = HomeMenu;
         idleTimer?.Start();
@@ -77,6 +79,26 @@ public partial class MainMenu : BaseScene
                 button.Pressed += () => Transition(menu);
             }
         }
+    }
+
+    private void setupRepositoryBrowser()
+    {
+        var toolbar = PlayMenu.GetNode<HBoxContainer>("SubTopBar/HBoxContainer");
+        repositoryBrowser = new RepositoryBrowser { Name = "RepositoryBrowser" };
+        AddChild(repositoryBrowser);
+
+        Button repositoryButton = new()
+        {
+            Name = "Repository",
+            Text = "Online Charts",
+            CustomMinimumSize = new Vector2(0, 36),
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            Theme = toolbar.Theme
+        };
+        repositoryButton.AddThemeColorOverride("font_color", Colors.White);
+        repositoryButton.Pressed += repositoryBrowser.Open;
+        toolbar.AddChild(repositoryButton);
     }
 
     public override void _Input(InputEvent @event)
