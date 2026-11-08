@@ -116,6 +116,18 @@ public partial class SettingsProfile
     public SettingsItem<string> GameSpace { get; private set; }
 
     /// <summary>
+    /// Adjusts how far the video background sits behind the playfield
+    /// </summary>
+    [Order]
+    public SettingsItem<double> VideoBackgroundDistance { get; private set; }
+
+    /// <summary>
+    /// Centers the main menu button column
+    /// </summary>
+    [Order]
+    public SettingsItem<bool> CenterMainMenuButtons { get; private set; }
+
+    /// <summary>
     /// Toggles note hit effects for the game space
     /// </summary>
     [Order]
@@ -186,6 +198,12 @@ public partial class SettingsProfile
     /// </summary>
     [Order]
     public SettingsItem<double> TrailTime { get; private set; }
+
+    /// <summary>
+    /// Keeps the cursor trail fully opaque instead of fading it out
+    /// </summary>
+    [Order]
+    public SettingsItem<bool> SolidTrail { get; private set; }
 
     /// <summary>
     /// Adjusts the distance between cursor trail segments
@@ -592,7 +610,7 @@ public partial class SettingsProfile
         {
             Id = "HUDParallax",
             Title = "HUD Parallax",
-            Description = "(Not implemented) Adjusts the HUD parallax",
+            Description = "Moves the HUD with cursor movement; 0 disables the effect",
             Section = SettingsSection.Gameplay,
             Slider = new()
             {
@@ -669,25 +687,7 @@ public partial class SettingsProfile
                     SkinManager.Load();
                 }
             },
-            List = new("skin")
-            {
-                Values =
-                [
-                    "skin",
-                    "void",
-                    "grid",
-                    "squircles",
-                    "waves",
-                    "galaxy",
-                    "tunnel",
-                    "circulartunnel",
-                    "tritunnel",
-                    "vortex",
-                    "solid",
-                    "relic",
-                    "conspiracy",
-                ],
-            },
+            List = new("skin") { Values = getAvailableSpaces() },
         };
 
         GameSpace = new("skin")
@@ -703,25 +703,31 @@ public partial class SettingsProfile
                     SkinManager.Load();
                 }
             },
-            List = new("skin")
+            List = new("skin") { Values = getAvailableSpaces() },
+        };
+
+        VideoBackgroundDistance = new(100)
+        {
+            Id = "VideoBackgroundDistance",
+            Title = "Video Background Distance",
+            Description = "Moves the video farther behind or closer to the playfield",
+            Section = SettingsSection.Visual,
+            UpdateAction = (value, _) => SkinManager.UpdateVideoBackgroundDistance(value),
+            Slider = new()
             {
-                Values =
-                [
-                    "skin",
-                    "void",
-                    "grid",
-                    "squircles",
-                    "waves",
-                    "galaxy",
-                    "tunnel",
-                    "circulartunnel",
-                    "tritunnel",
-                    "vortex",
-                    "solid",
-                    "relic",
-                    "conspiracy",
-                ],
+                Step = 1,
+                MinValue = 20,
+                MaxValue = 200,
             },
+        };
+
+        CenterMainMenuButtons = new(false)
+        {
+            Id = "CenterMainMenuButtons",
+            Title = "Center Main Menu Buttons",
+            Description = "Moves the main menu buttons from the left side to the horizontal center of the screen",
+            Section = SettingsSection.Visual,
+            UpdateAction = (value, _) => MainMenu.UpdateMainMenuButtonLayout(value),
         };
 
         SpaceHitEffects = new(true)
@@ -788,7 +794,7 @@ public partial class SettingsProfile
         {
             Id = "NoteMesh",
             Title = "Note Mesh",
-            Description = "Overrides the skin's note mesh",
+            Description = "Overrides the skin's note mesh with an OBJ mesh or PNG note image",
             Section = SettingsSection.Visual,
             UpdateAction = (_, init) =>
             {
@@ -884,6 +890,14 @@ public partial class SettingsProfile
                 MinValue = 0,
                 MaxValue = 0.5f,
             },
+        };
+
+        SolidTrail = new(false)
+        {
+            Id = "SolidTrail",
+            Title = "Solid Trail",
+            Description = "Keeps the cursor trail fully opaque instead of fading it out",
+            Section = SettingsSection.Visual,
         };
 
         TrailDetail = new(100)
@@ -1540,14 +1554,53 @@ public partial class SettingsProfile
 
         if (Directory.Exists(meshDir))
         {
-            string[] objFiles = Directory.GetFiles(meshDir, "*.obj");
-            foreach (string file in objFiles)
+            foreach (string file in Directory.GetFiles(meshDir))
             {
-                meshes.Add(Path.GetFileNameWithoutExtension(file));
+                string extension = Path.GetExtension(file);
+                if (string.Equals(extension, ".obj", StringComparison.OrdinalIgnoreCase))
+                {
+                    meshes.Add(Path.GetFileNameWithoutExtension(file));
+                }
+                else if (string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase))
+                {
+                    meshes.Add(Path.GetFileName(file));
+                }
             }
         }
 
         return meshes;
+    }
+
+    private static List<string> getAvailableSpaces()
+    {
+        List<string> spaces =
+        [
+            "skin",
+            "void",
+            "grid",
+            "squircles",
+            "waves",
+            "galaxy",
+            "tunnel",
+            "circulartunnel",
+            "tritunnel",
+            "vortex",
+            "solid",
+            "relic",
+            "conspiracy",
+        ];
+        string spacesDir = Path.Combine(Constants.USER_FOLDER, "spaces");
+        Directory.CreateDirectory(spacesDir);
+
+        foreach (string file in Directory.GetFiles(spacesDir))
+        {
+            if (string.Equals(Path.GetExtension(file), ".ogv", StringComparison.OrdinalIgnoreCase))
+            {
+                spaces.Add($"video:{Path.GetFileName(file)}");
+            }
+        }
+
+        return spaces;
     }
 
     public static void ImportFromNightlySettings(string settingsPath)

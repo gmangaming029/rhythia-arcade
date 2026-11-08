@@ -154,6 +154,36 @@ You can also access the user folder from within the game via the **User Folder**
 > [!NOTE]
 > You can change the user folder location to your desired path in **Settings** → **Other** → **Set User Folder Path**
 
+If a folder named `Rhythia` is placed beside the game executable, the game copies its files into the configured user folder on startup. Existing files are never overwritten. The bundled `data.db` (which contains playtime and other local statistics) and `arcade-api.token` are not copied, so each player starts with their own playtime and API credentials.
+
+### Skin Note Appearance
+
+Skins can render notes from either a PNG image or the existing 3D mesh. To use an image, put a PNG in the user data `meshes` folder (for example, `%appdata%\Rhythia\meshes` on Windows). You can select it in **Settings** → **Visual** → **Note Mesh**, or set `note_texture` in the skin's `config.toml` to the file name:
+
+```toml
+note_texture = "note.png"
+```
+
+PNG and OBJ files in the user `meshes` folder are listed in **Settings** → **Visual** → **Note Mesh**. Selecting a PNG renders it as a 3D note with its alpha transparency. Choose `skin` to use the skin's configured `note_texture` or `note_mesh`. PNG notes are tinted by the selected note colors.
+
+### Skin Intro Video
+
+Add an optional `warning.ogv` and/or `intro.ogv` file to the selected skin folder. `warning.ogv`, when present, plays first with audio muted; `intro.ogv` then plays with its audio. Both play once, and startup continues to the menu when loading is complete. Press a key, mouse button, or controller button to skip the current video. Videos must use Ogg Theora (`.ogv`), supported by Godot's built-in video player.
+
+### Background Editor
+
+Choose **Background Editor** from the top menu to preview and edit the selected menu or game background. Select scene objects to adjust their position, rotation, and scale; add colored box, sphere, cylinder, or quad meshes; or hide existing objects. Save changes per background, or reset that background to its original layout. Layouts are stored in the Rhythia user folder.
+
+### Display Test
+
+Choose **Display Test** from the top menu to open full-screen color-bar, grayscale, geometry/safe-area, CRT convergence/overscan, and gameplay-readability patterns. Use the on-screen buttons, Left/Right, or keys 1-5 to switch patterns; press Escape to close. Use the same test on each monitor and compare readability, safe areas, and color detail.
+
+The **Center Main Menu Buttons** option in **Settings** → **Visual** moves the home-menu button column from the left side to the horizontal center of the screen.
+
+### Video Backgrounds
+
+Convert videos to Ogg Theora (`.ogv`) and put them in the user data `spaces` folder (for example, `%appdata%\Rhythia\spaces` on Windows). Restart the game, then select the video from **Settings** → **Visual** → **Menu Space** or **Game Space**. Adjust **Video Background Distance** in Visual settings to move the video behind the playfield; the image scales to continue filling the view. Videos loop silently using Godot's built-in video player.
+
 ---
 
 ## Getting Maps

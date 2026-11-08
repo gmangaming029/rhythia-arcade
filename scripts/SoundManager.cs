@@ -35,6 +35,9 @@ public partial class SoundManager : Node, ISkinnable
     private static ulong lastVolumeChange = 0;
     private static bool? jeeping = null; // we're jeeping (last state of a song)
     private static bool menuMusicPausedByUser = false;
+    private static bool skinWarningAudioMuted;
+    private static bool menuMusicPausedForSkinWarning;
+    private static bool songPausedForSkinWarning;
 
     private static bool offsetPopupShown = false;
     private static ulong lastOffsetChange = 0;
@@ -127,11 +130,7 @@ public partial class SoundManager : Node, ISkinnable
         {
             UpdateJukeboxQueue();
 
-            if (SettingsManager.Instance.Settings.AutoplayJukebox)
-            {
-                PlayJukebox(new Random().Next(0, JukeboxQueue.Length));
-            }
-            else
+            if (!SettingsManager.Instance.Settings.AutoplayJukebox)
             {
                 StopScopedSession();
             }
@@ -472,7 +471,13 @@ public partial class SoundManager : Node, ISkinnable
         HitSound.Stream = Util.Audio.LoadStream(skin.HitSoundBuffer);
         MissSound.Stream = Util.Audio.LoadStream(skin.MissSoundBuffer);
         FailSound.Stream = Util.Audio.LoadStream(skin.FailSoundBuffer);
-        MenuMusic.Stream = Util.Audio.LoadStream(skin.MenuMusicBuffer);
+        var menuMusicStream = Util.Audio.LoadStream(skin.MenuMusicBuffer);
+        if (menuMusicStream is AudioStreamMP3 menuMusicMp3)
+        {
+            menuMusicMp3.Loop = true;
+        }
+
+        MenuMusic.Stream = menuMusicStream;
 
         RefreshMenuMusicPlayback();
     }
@@ -481,6 +486,13 @@ public partial class SoundManager : Node, ISkinnable
     {
         if (MenuMusic == null)
         {
+            return;
+        }
+
+        if (skinWarningAudioMuted)
+        {
+            pauseForSkinWarning(MenuMusic, ref menuMusicPausedForSkinWarning);
+            pauseForSkinWarning(Song, ref songPausedForSkinWarning);
             return;
         }
 
@@ -523,6 +535,40 @@ public partial class SoundManager : Node, ISkinnable
         }
     }
 
+    public static void SetSkinWarningAudioMuted(bool muted)
+    {
+        skinWarningAudioMuted = muted;
+        if (muted)
+        {
+            pauseForSkinWarning(MenuMusic, ref menuMusicPausedForSkinWarning);
+            pauseForSkinWarning(Song, ref songPausedForSkinWarning);
+            return;
+        }
+
+        if (menuMusicPausedForSkinWarning && MenuMusic != null)
+        {
+            MenuMusic.StreamPaused = false;
+        }
+
+        if (songPausedForSkinWarning && Song != null)
+        {
+            Song.StreamPaused = false;
+        }
+
+        menuMusicPausedForSkinWarning = false;
+        songPausedForSkinWarning = false;
+        RefreshMenuMusicPlayback();
+    }
+
+    private static void pauseForSkinWarning(AudioStreamPlayer player, ref bool pausedByWarning)
+    {
+        if (player?.Playing == true && !player.StreamPaused)
+        {
+            player.StreamPaused = true;
+            pausedByWarning = true;
+        }
+    }
+
     private static bool shouldPlayMenuMusic()
     {
         if (!SettingsManager.Instance.Settings.EnableMenuMusic.Value)
@@ -535,7 +581,7 @@ public partial class SoundManager : Node, ISkinnable
             return false;
         }
 
-        if (SceneManager.Scene is not MainMenu)
+        if (SceneManager.Scene is not MainMenu && SceneManager.Scene is not Loading)
         {
             return false;
         }

@@ -139,11 +139,25 @@ public partial class SkinManager : Node
         skin.HitSoundBuffer = loadSound("hit.mp3");
         skin.MissSoundBuffer = loadSound("miss.mp3");
         skin.FailSoundBuffer = loadSound("fail.mp3");
-        skin.MenuMusicBuffer = loadSound("menu.mp3");
+        skin.MenuMusicBuffer = loadMenuMusic();
 
         // Meshes
 
-        skin.NoteMesh = loadMesh($"{Constants.USER_FOLDER}/meshes/{(settings.NoteMesh == "skin" ? skin.Config.NoteMesh : settings.NoteMesh)}.obj");
+        if (settings.NoteMesh == "skin")
+        {
+            skin.NoteMesh = loadMesh($"{Constants.USER_FOLDER}/meshes/{skin.Config.NoteMesh}.obj");
+            skin.NoteTexture = loadNoteTexture(skin.Config.NoteTexture);
+        }
+        else if (settings.NoteMesh.Value.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
+        {
+            skin.NoteMesh = loadMesh($"{Constants.USER_FOLDER}/meshes/{skin.Config.NoteMesh}.obj");
+            skin.NoteTexture = loadNoteTexture(settings.NoteMesh.Value);
+        }
+        else
+        {
+            skin.NoteMesh = loadMesh($"{Constants.USER_FOLDER}/meshes/{settings.NoteMesh.Value}.obj");
+            skin.NoteTexture = null;
+        }
 
         // Colors
 
@@ -165,8 +179,8 @@ public partial class SkinManager : Node
 
         // Spaces
 
-        skin.GameSpace = loadSpace($"res://prefabs/spaces/{(settings.GameSpace == "skin" ? skin.Config.GameSpace : settings.GameSpace)}.tscn");
-        skin.MenuSpace = loadSpace($"res://prefabs/spaces/{(settings.MenuSpace == "skin" ? skin.Config.MenuSpace : settings.MenuSpace)}.tscn");
+        skin.GameSpace = loadSpace(settings.GameSpace == "skin" ? skin.Config.GameSpace : settings.GameSpace.Value);
+        skin.MenuSpace = loadSpace(settings.MenuSpace == "skin" ? skin.Config.MenuSpace : settings.MenuSpace.Value);
 
         /////
 
@@ -184,6 +198,37 @@ public partial class SkinManager : Node
     {
         Save();
         Load();
+    }
+
+    public static void UpdateVideoBackgroundDistance(double distance)
+    {
+        if (Instance == null)
+        {
+            return;
+        }
+
+        if (Instance.Skin.MenuSpace is VideoSpace menuVideoSpace)
+        {
+            menuVideoSpace.SetBackgroundDistance(distance);
+        }
+
+        if (Instance.Skin.GameSpace is VideoSpace gameVideoSpace)
+        {
+            gameVideoSpace.SetBackgroundDistance(distance);
+        }
+    }
+
+    public static BaseSpace CreateSpaceForEditor(bool gameSpace)
+    {
+        string spaceName = gameSpace
+            ? SettingsManager.Instance.Settings.GameSpace == "skin"
+                ? Instance.Skin.Config.GameSpace
+                : SettingsManager.Instance.Settings.GameSpace.Value
+            : SettingsManager.Instance.Settings.MenuSpace == "skin"
+                ? Instance.Skin.Config.MenuSpace
+                : SettingsManager.Instance.Settings.MenuSpace.Value;
+
+        return loadSpace(spaceName);
     }
 
     private static ImageTexture loadTexture(string skinPath)
@@ -228,6 +273,42 @@ public partial class SkinManager : Node
         return buffer;
     }
 
+    private static byte[] loadBundledMenuMusic()
+    {
+        const string path = "res://Rhythia_-_Menu_Theme_Redshift_KLICKAUD.mp3";
+        Godot.FileAccess file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            Logger.Log($"Could not open bundled menu theme: {Godot.FileAccess.GetOpenError()}", true);
+            return loadSound("menu.mp3");
+        }
+
+        byte[] buffer = file.GetBuffer((long)file.GetLength());
+        file.Close();
+
+        if (buffer.Length < 4)
+        {
+            Logger.Log($"Bundled menu theme is empty or invalid: {path}", true);
+            return loadSound("menu.mp3");
+        }
+
+        return buffer;
+    }
+
+    private static byte[] loadMenuMusic()
+    {
+        if (SettingsManager.Instance.Settings.Skin.Value != "default")
+        {
+            byte[] skinMusic = loadSound("menu.mp3");
+            if (skinMusic.Length > 0)
+            {
+                return skinMusic;
+            }
+        }
+
+        return loadBundledMenuMusic();
+    }
+
     private static Shader loadShader(string skinPath)
     {
         var settings = SettingsManager.Instance.Settings;
@@ -245,9 +326,71 @@ public partial class SkinManager : Node
             : GD.Load<ArrayMesh>("res://user/meshes/squircle.obj");
     }
 
-    private static BaseSpace loadSpace(string path)
+    private static ImageTexture loadNoteTexture(string fileName)
     {
-        return GD.Load<PackedScene>(resourceExists(path) ? path : "res://prefabs/spaces/void.tscn").Instantiate<Node3D>() as BaseSpace;
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        if (
+            fileName.Contains('/') || fileName.Contains('\\')
+            || fileName != Path.GetFileName(fileName)
+            || !string.Equals(Path.GetExtension(fileName), ".png", System.StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            Logger.Log($"Note texture must be a PNG file in the user meshes folder: {fileName}", true);
+            return null;
+        }
+
+        string path = Path.Combine(Constants.USER_FOLDER, "meshes", fileName);
+        if (!File.Exists(path))
+        {
+            Logger.Log($"Could not find note texture: {path}", true);
+            return null;
+        }
+
+        var image = Image.LoadFromFile(path);
+        if (image == null || image.IsEmpty())
+        {
+            Logger.Log($"Could not load note texture: {path}", true);
+            return null;
+        }
+
+        image.Convert(Image.Format.Rgba8);
+        image.GenerateMipmaps();
+        return ImageTexture.CreateFromImage(image);
+    }
+
+    private static BaseSpace loadSpace(string spaceName)
+    {
+        if (spaceName.StartsWith("video:", System.StringComparison.Ordinal))
+        {
+            string fileName = spaceName["video:".Length..];
+            if (
+                fileName != Path.GetFileName(fileName)
+                || !string.Equals(Path.GetExtension(fileName), ".ogv", System.StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                Logger.Log($"Invalid video background selection: {spaceName}", true);
+                return GD.Load<PackedScene>("res://prefabs/spaces/void.tscn").Instantiate<BaseSpace>();
+            }
+
+            string videoPath = Path.Combine(Constants.USER_FOLDER, "spaces", fileName);
+            if (!File.Exists(videoPath))
+            {
+                Logger.Log($"Could not find background video: {videoPath}", true);
+                return GD.Load<PackedScene>("res://prefabs/spaces/void.tscn").Instantiate<BaseSpace>();
+            }
+
+            return new VideoSpace { VideoPath = videoPath, BackgroundId = spaceName };
+        }
+
+        string path = $"res://prefabs/spaces/{spaceName}.tscn";
+        BaseSpace space = GD.Load<PackedScene>(resourceExists(path) ? path : "res://prefabs/spaces/void.tscn")
+            .Instantiate<Node3D>() as BaseSpace;
+        space.BackgroundId = spaceName;
+        return space;
     }
 
     private static bool resourceExists(string path)

@@ -2,6 +2,12 @@
 
 The arcade integration runs inside the native Godot client. It does not use a browser or a payment processor: a cabinet controller reports accepted payments to the localhost API, and the client turns those reports into shared play credits.
 
+## Packaging
+
+Run `.\package.ps1` in PowerShell to build and export the configured **Windows Desktop** preset to `build\packages\windows.zip`. The script uses the project's bundled Godot .NET executable at `.godot-sdk\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64.exe`; the matching Windows export templates and an export preset named `Windows Desktop` in `export_presets.cfg` are also required. Use `-Preset`, `-ExportFileName`, or `-ArchiveName` to change the preset, executable name, or ZIP name.
+
+The package includes `rhythia-free-play-default.txt` beside the executable with the exact contents `true` (no newline). When this file contains exactly `true`, free play is forced on for that session, even if saved arcade state disables it. The override is not saved to `arcade-state.json`; removing or changing the marker takes effect on the next launch. Running the project from the editor does not use the packaged default.
+
 ## Local API
 
 The client listens on `127.0.0.1:8765` by default. It generates a 256-bit bearer token in `arcade-api.token` inside the Rhythia user folder on first launch. Keep that file private. Requests from other computers are not accepted; run the cabinet controller on the game machine or use a local bridge.

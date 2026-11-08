@@ -6,6 +6,8 @@ public class SkinConfig
 
     public string NoteMesh { get; private set; } = "squircle";
 
+    public string NoteTexture { get; private set; } = "";
+
     public string GameSpace { get; private set; } = "grid";
 
     public string MenuSpace { get; private set; } = "waves";

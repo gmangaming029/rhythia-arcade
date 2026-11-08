@@ -34,7 +34,13 @@ public partial class NoteRenderer : Renderer, IRenderer<Note>
         NoteMultiMesh.Multimesh.InstanceCount = 0;
         NoteMultiMesh.Multimesh.VisibleInstanceCount = -1;
 
+        material.AlbedoTexture = skin.NoteTexture;
+        NoteMultiMesh.Multimesh.Mesh = skin.NoteTexture != null
+            ? new QuadMesh { Size = Vector2.One * 2, Material = material }
+            : skin.NoteMesh;
+
         var mesh = NoteMultiMesh.Multimesh.Mesh;
+        bool usesNoteTexture = skin.NoteTexture != null;
 
         for (int i = 0; i < mesh.GetSurfaceCount(); i++)
         {
@@ -46,7 +52,13 @@ public partial class NoteRenderer : Renderer, IRenderer<Note>
             if (mesh.SurfaceGetMaterial(i) is not StandardMaterial3D mat)
                 continue;
 
-            mat.Transparency = BaseMaterial3D.TransparencyEnum.AlphaDepthPrePass;
+            mat.Transparency = usesNoteTexture
+                ? BaseMaterial3D.TransparencyEnum.Alpha
+                : BaseMaterial3D.TransparencyEnum.AlphaDepthPrePass;
+            if (usesNoteTexture)
+            {
+                mat.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+            }
             mat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
             mat.DisableFog = true;
             mat.DisableAmbientLight = true;

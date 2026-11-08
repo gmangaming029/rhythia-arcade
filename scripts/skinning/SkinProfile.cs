@@ -147,6 +147,8 @@ public partial class SkinProfile : RefCounted
 
     public ArrayMesh NoteMesh { get; set; } = new();
 
+    public ImageTexture NoteTexture { get; set; }
+
     public BaseSpace MenuSpace { get; set; }
 
     public BaseSpace GameSpace { get; set; }

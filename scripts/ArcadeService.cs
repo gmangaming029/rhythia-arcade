@@ -23,6 +23,7 @@ public partial class ArcadeService : Node
     private CancellationTokenSource cancellation;
     private int credits;
     private bool freePlay;
+    private bool sessionFreePlayOverride;
     private bool persistenceAvailable = true;
 
     private sealed class PersistedState
@@ -48,7 +49,7 @@ public partial class ArcadeService : Node
         get
         {
             lock (stateLock)
-                return freePlay;
+                return isFreePlayEnabledLocked();
         }
     }
 
@@ -78,8 +79,8 @@ public partial class ArcadeService : Node
 
         lock (stateLock)
         {
-            isFreePlay = freePlay;
-            if (!persistenceAvailable)
+            isFreePlay = isFreePlayEnabledLocked();
+            if (!persistenceAvailable && !sessionFreePlayOverride)
             {
                 _ = ToastNotification.Notify("Arcade credit storage is unavailable. Map start cancelled.", 1);
                 return false;
@@ -217,7 +218,7 @@ public partial class ArcadeService : Node
                 else
                 {
                     currentCredits = credits;
-                    currentFreePlay = freePlay;
+                    currentFreePlay = isFreePlayEnabledLocked();
                 }
             }
 
@@ -443,7 +444,7 @@ public partial class ArcadeService : Node
             }
 
             updatedCredits = credits;
-            currentFreePlay = freePlay;
+            currentFreePlay = isFreePlayEnabledLocked();
         }
 
         Callable
@@ -455,6 +456,7 @@ public partial class ArcadeService : Node
     public bool SetFreePlay(bool enabled)
     {
         int currentCredits;
+        bool currentFreePlay;
         lock (stateLock)
         {
             bool previousFreePlay = freePlay;
@@ -465,40 +467,62 @@ public partial class ArcadeService : Node
                 return false;
             }
             currentCredits = credits;
+            currentFreePlay = isFreePlayEnabledLocked();
         }
 
-        Callable.From(() => EmitSignal(SignalName.StateChanged, currentCredits, enabled)).CallDeferred();
+        Callable.From(() => EmitSignal(SignalName.StateChanged, currentCredits, currentFreePlay)).CallDeferred();
         return true;
     }
 
     private void LoadState()
     {
-        if (!File.Exists(StatePath))
-            return;
-
-        try
+        if (File.Exists(StatePath))
         {
-            PersistedState saved = JsonSerializer.Deserialize<PersistedState>(File.ReadAllText(StatePath));
-            if (saved == null || saved.Credits < 0 || saved.Transactions == null)
-                throw new InvalidDataException("Arcade state contains invalid values.");
-
-            credits = saved.Credits;
-            freePlay = saved.FreePlay;
-            foreach (string transaction in saved.Transactions.TakeLast(4096))
+            try
             {
-                if (!string.IsNullOrWhiteSpace(transaction))
+                PersistedState saved = JsonSerializer.Deserialize<PersistedState>(File.ReadAllText(StatePath));
+                if (saved == null || saved.Credits < 0 || saved.Transactions == null)
+                    throw new InvalidDataException("Arcade state contains invalid values.");
+
+                credits = saved.Credits;
+                freePlay = saved.FreePlay;
+                foreach (string transaction in saved.Transactions.TakeLast(4096))
                 {
-                    transactions.Add(transaction);
-                    transactionOrder.Enqueue(transaction);
+                    if (!string.IsNullOrWhiteSpace(transaction))
+                    {
+                        transactions.Add(transaction);
+                        transactionOrder.Enqueue(transaction);
+                    }
                 }
             }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
+            {
+                persistenceAvailable = false;
+                Logger.Error($"Unable to load saved arcade state; credit changes are disabled to protect the existing balance: {exception.Message}");
+            }
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
+
+        string executableDirectory = Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
+        string defaultFreePlayPath = Path.Combine(executableDirectory, "rhythia-free-play-default.txt");
+        try
         {
-            persistenceAvailable = false;
-            Logger.Error($"Unable to load saved arcade state; credit changes are disabled to protect the existing balance: {exception.Message}");
+            sessionFreePlayOverride = File.ReadAllText(defaultFreePlayPath) == "true";
+        }
+        catch (FileNotFoundException)
+        {
+            sessionFreePlayOverride = false;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            sessionFreePlayOverride = false;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Logger.Error($"Unable to read the default free-play marker: {exception.Message}");
         }
     }
+
+    private bool isFreePlayEnabledLocked() => freePlay || sessionFreePlayOverride;
 
     private bool saveStateLocked()
     {

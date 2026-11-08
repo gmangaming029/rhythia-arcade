@@ -23,7 +23,13 @@ public partial class BaseSpace : Node3D
         }
 
         WorldEnvironment = GetNode<WorldEnvironment>("WorldEnvironment");
+        if (!string.IsNullOrWhiteSpace(BackgroundId))
+        {
+            BackgroundEditorLayout.Load(BackgroundId).Apply(this);
+        }
     }
+
+    public string BackgroundId { get; set; }
 
     private void onHitResultChanged(int noteIndex, HitResult hitResult)
     {

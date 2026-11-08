@@ -20,6 +20,12 @@ public partial class MapInfoContainer : Panel, ISkinnable
     [Export]
     private Control info;
 
+    private ScrollContainer infoScrollContainer;
+    private Panel chartDetailsPanel;
+    private RichTextLabel chartDetailsLabel;
+    private ScrollContainer chartDetailsScroll;
+    private bool chartDetailsExpanded;
+
     [Export]
     private ColorRect dim;
 
@@ -123,6 +129,8 @@ public partial class MapInfoContainer : Panel, ISkinnable
         extraLabelFormat = extraLabel.Text;
         artistLinkFormat = artistLink.Text;
         outlineMaterial = info.GetNode<Panel>("Outline").Material as ShaderMaterial;
+        infoScrollContainer = info.GetNode<ScrollContainer>("ScrollContainer");
+        createChartDetailsPanel();
 
         exportButton.Pressed += () =>
         {
@@ -375,6 +383,27 @@ public partial class MapInfoContainer : Panel, ISkinnable
         {
             switch (mouseButton.ButtonIndex)
             {
+                case MouseButton.Left:
+                    if (
+                        chartDetailsExpanded
+                        || Map == null
+                        || !info.GetGlobalRect().HasPoint(mouseButton.GlobalPosition)
+                    )
+                    {
+                        break;
+                    }
+
+                    foreach (Button button in new[] { artistLink, exportButton, favoriteButton, videoButton, copyButton, deleteButton })
+                    {
+                        if (button.Visible && !button.Disabled && button.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
+                        {
+                            return;
+                        }
+                    }
+
+                    setChartDetailsExpanded(true);
+                    GetViewport().SetInputAsHandled();
+                    break;
                 case MouseButton.Right:
                     toggleLeaderboard(false);
                     break;
@@ -384,6 +413,13 @@ public partial class MapInfoContainer : Panel, ISkinnable
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Escape && chartDetailsExpanded)
+        {
+            setChartDetailsExpanded(false);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
         {
             switch (mouseButton.ButtonIndex)
@@ -392,6 +428,148 @@ public partial class MapInfoContainer : Panel, ISkinnable
                     toggleLeaderboard(false);
                     break;
             }
+        }
+    }
+
+    private void createChartDetailsPanel()
+    {
+        chartDetailsPanel = new Panel
+        {
+            Name = "ChartDetails",
+            Visible = false,
+            Modulate = Colors.Transparent,
+        };
+        chartDetailsPanel.AnchorLeft = 0;
+        chartDetailsPanel.AnchorTop = 0.4f;
+        chartDetailsPanel.AnchorRight = 1;
+        chartDetailsPanel.AnchorBottom = 1;
+        chartDetailsPanel.MouseFilter = Control.MouseFilterEnum.Ignore;
+        chartDetailsPanel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        info.AddChild(chartDetailsPanel);
+
+        Label heading = new()
+        {
+            Text = "CHART INFORMATION",
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        heading.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopWide);
+        heading.OffsetLeft = 14;
+        heading.OffsetTop = 10;
+        heading.OffsetRight = -100;
+        heading.OffsetBottom = 36;
+        heading.AddThemeFontSizeOverride("font_size", 18);
+        chartDetailsPanel.AddChild(heading);
+
+        Button closeButton = new()
+        {
+            Text = "CLOSE",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+        };
+        closeButton.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
+        closeButton.OffsetLeft = -82;
+        closeButton.OffsetTop = 6;
+        closeButton.OffsetRight = -8;
+        closeButton.OffsetBottom = 36;
+        closeButton.Pressed += () => setChartDetailsExpanded(false);
+        chartDetailsPanel.AddChild(closeButton);
+
+        chartDetailsScroll = new ScrollContainer
+        {
+            MouseFilter = Control.MouseFilterEnum.Stop,
+        };
+        chartDetailsScroll.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        chartDetailsScroll.OffsetLeft = 14;
+        chartDetailsScroll.OffsetTop = 44;
+        chartDetailsScroll.OffsetRight = -14;
+        chartDetailsScroll.OffsetBottom = -12;
+        chartDetailsPanel.AddChild(chartDetailsScroll);
+
+        chartDetailsLabel = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            FitContent = true,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Text = "",
+        };
+        chartDetailsLabel.AddThemeFontSizeOverride("normal_font_size", 16);
+        chartDetailsScroll.AddChild(chartDetailsLabel);
+    }
+
+    private string getChartDetails()
+    {
+        string value(string text) => Util.String.SanitizeBBCode(string.IsNullOrWhiteSpace(text) ? "Not provided" : text);
+        string rating = Map.Rating > 0 ? Map.Rating.ToString("0.##", CultureInfo.CurrentCulture) : "Not rated";
+
+        string details =
+            $"[b]Title:[/b] {value(Map.Title)}\n"
+            + $"[b]Artist:[/b] {value(Map.Artist)}\n"
+            + $"[b]Difficulty:[/b] {value(Map.DifficultyName)}\n"
+            + $"[b]Chart rating:[/b] {rating}\n"
+            + $"[b]Mapped by:[/b] {value(Map.PrettyMappers)}\n"
+            + $"[b]Length:[/b] {Util.String.FormatTime(Map.Length / 1000)}\n"
+            + $"[b]Notes:[/b] {Map.Notes.Length}\n"
+            + $"[b]Local plays:[/b] {Map.PlayCount}\n"
+            + $"[b]Chart ID:[/b] {value(Map.Name)}\n"
+            + $"[b]Audio format:[/b] {value(Map.AudioExt.ToUpperInvariant())}";
+
+        if (!string.IsNullOrWhiteSpace(Map.Collection))
+        {
+            details += $"\n[b]Collection:[/b] {value(Map.Collection)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Map.ArtistPlatform))
+        {
+            details += $"\n[b]Artist link:[/b] {value(Map.ArtistPlatform)}";
+        }
+
+        return details;
+    }
+
+    private void setChartDetailsExpanded(bool expanded)
+    {
+        if (chartDetailsExpanded == expanded || Map == null)
+        {
+            return;
+        }
+
+        chartDetailsExpanded = expanded;
+
+        if (expanded)
+        {
+            chartDetailsLabel.Text = getChartDetails();
+            chartDetailsPanel.Visible = true;
+            chartDetailsPanel.Modulate = Colors.Transparent;
+            info.ZIndex = 10;
+            actions.Visible = false;
+            leaderboard.Visible = false;
+            lbHide.Visible = false;
+            toggleLeaderboard(false);
+        }
+
+        Tween tween = CreateTween().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic).SetParallel();
+        tween.TweenProperty(info, "anchor_bottom", expanded ? 1f : 0.4f, 0.35);
+        tween.TweenProperty(info, "offset_bottom", expanded ? 0f : -8f, 0.35);
+        infoScrollContainer.AnchorBottom = expanded ? 0.4f : 1f;
+
+        if (expanded)
+        {
+            tween.TweenProperty(chartDetailsPanel, "modulate", Colors.White, 0.2);
+        }
+        else
+        {
+            tween.TweenProperty(chartDetailsPanel, "modulate", Colors.Transparent, 0.15);
+            tween.Chain();
+            tween.TweenCallback(
+                Callable.From(() =>
+                {
+                    chartDetailsPanel.Visible = false;
+                    info.ZIndex = 0;
+                    actions.Visible = true;
+                    leaderboard.Visible = !chartDetailsExpanded && Leaderboard.Valid && Leaderboard.ScoreCount > 0;
+                })
+            );
         }
     }
 
@@ -461,6 +639,10 @@ public partial class MapInfoContainer : Panel, ISkinnable
         artistLink.Text = string.Format(CultureInfo.CurrentCulture, artistLinkFormat, map.ArtistPlatform);
 
         artistLink.UpdateLink(map.ArtistLink);
+        if (chartDetailsExpanded)
+        {
+            chartDetailsLabel.Text = getChartDetails();
+        }
 
         // Actions
 

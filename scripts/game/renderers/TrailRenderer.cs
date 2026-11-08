@@ -130,9 +130,13 @@ public partial class TrailRenderer : Node
             //1. find total time that trail exists
             //2. find amount of steps till it fades
             //3. lerp from 1 (fully opaque) to 0 (fully transparent) with interpolated steps
-            float elapsed = (now - trail.Time) / 1_000_000f;
-            float step = (float)Math.Clamp(elapsed / SettingsManager.Instance.Settings.TrailTime.Value, 0f, 1f);
-            float alpha = Mathf.Lerp(1, 0, step);
+            float alpha = 1f;
+            if (!SettingsManager.Instance.Settings.SolidTrail.Value)
+            {
+                float elapsed = (now - trail.Time) / 1_000_000f;
+                float step = (float)Math.Clamp(elapsed / SettingsManager.Instance.Settings.TrailTime.Value, 0f, 1f);
+                alpha = Mathf.Lerp(1, 0, step);
+            }
             cursorTrail.Multimesh.SetInstanceTransform(j, transform);
             cursorTrail.Multimesh.SetInstanceColor(j, new Color(1, 1, 1, alpha));
         }

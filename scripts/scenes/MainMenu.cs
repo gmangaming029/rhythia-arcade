@@ -35,6 +35,9 @@ public partial class MainMenu : BaseScene
     private VBoxContainer campaignStages;
     private Label campaignProgress;
     private RepositoryBrowser repositoryBrowser;
+    private DisplayTestOverlay displayTestOverlay;
+    private BackgroundEditor backgroundEditor;
+    private VBoxContainer homeButtons;
 
     public override void _Ready()
     {
@@ -43,6 +46,7 @@ public partial class MainMenu : BaseScene
         menuHolder = GetNode<Panel>("Menus");
 
         HomeMenu = menuHolder.GetNode<Panel>("Home");
+        homeButtons = HomeMenu.GetNode<VBoxContainer>("Buttons");
         PlayMenu = menuHolder.GetNode<Panel>("Play");
         LastMenu = HomeMenu;
 
@@ -79,6 +83,62 @@ public partial class MainMenu : BaseScene
                 button.Pressed += () => Transition(menu);
             }
         }
+
+        setupDisplayTest();
+        ApplyMainMenuButtonLayout(SettingsManager.Instance.Settings.CenterMainMenuButtons);
+    }
+
+    public static void UpdateMainMenuButtonLayout(bool centered)
+    {
+        if (SceneManager.Scene is MainMenu mainMenu)
+        {
+            mainMenu.ApplyMainMenuButtonLayout(centered);
+        }
+    }
+
+    private void ApplyMainMenuButtonLayout(bool centered)
+    {
+        homeButtons.AnchorLeft = centered ? 0.5f : 0;
+        homeButtons.AnchorRight = centered ? 0.5f : 0;
+        homeButtons.OffsetLeft = centered ? -168 : 64;
+        homeButtons.OffsetRight = centered ? 168 : 400;
+    }
+
+    private void setupDisplayTest()
+    {
+        displayTestOverlay = new DisplayTestOverlay { Name = "DisplayTestOverlay", Layer = 100 };
+        displayTestOverlay.Closed += resetIdleTimer;
+        AddChild(displayTestOverlay);
+
+        Button displayTestButton = new()
+        {
+            Name = "DisplayTest",
+            Text = "Display Test",
+            Flat = true,
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            Theme = TopBar.GetNode<Button>("MenuButtons/Home").Theme,
+        };
+        displayTestButton.AddThemeFontSizeOverride("font_size", 18);
+        displayTestButton.Pressed += displayTestOverlay.ShowTest;
+        topBarButtonsContainer.AddChild(displayTestButton);
+
+        backgroundEditor = new BackgroundEditor { Name = "BackgroundEditor", Layer = 110 };
+        backgroundEditor.Closed += resetIdleTimer;
+        AddChild(backgroundEditor);
+
+        Button backgroundEditorButton = new()
+        {
+            Name = "BackgroundEditor",
+            Text = "Background Editor",
+            Flat = true,
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            Theme = TopBar.GetNode<Button>("MenuButtons/Home").Theme,
+        };
+        backgroundEditorButton.AddThemeFontSizeOverride("font_size", 18);
+        backgroundEditorButton.Pressed += backgroundEditor.OpenEditor;
+        topBarButtonsContainer.AddChild(backgroundEditorButton);
     }
 
     private void setupRepositoryBrowser()
@@ -114,6 +174,9 @@ public partial class MainMenu : BaseScene
     {
         resetIdleTimer();
 
+        if (backgroundEditor?.IsOpen == true || displayTestOverlay?.IsOpen == true)
+            return;
+
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
         {
             switch (mouseButton.ButtonIndex)
@@ -130,6 +193,9 @@ public partial class MainMenu : BaseScene
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (displayTestOverlay?.IsOpen == true || backgroundEditor?.IsOpen == true)
+            return;
+
         resetIdleTimer();
 
         if (@event is InputEventKey key && key.Pressed)
@@ -488,6 +554,18 @@ public partial class MainMenu : BaseScene
 
     private void resetIdleTimer()
     {
+        if (backgroundEditor?.IsOpen == true)
+        {
+            idleTimer?.Stop();
+            return;
+        }
+
+        if (displayTestOverlay?.IsOpen == true)
+        {
+            idleTimer?.Stop();
+            return;
+        }
+
         if (attractOverlay == null)
         {
             idleTimer?.Start();
@@ -506,6 +584,18 @@ public partial class MainMenu : BaseScene
 
     private void startAttractMode()
     {
+        if (backgroundEditor?.IsOpen == true)
+        {
+            idleTimer?.Stop();
+            return;
+        }
+
+        if (displayTestOverlay?.IsOpen == true)
+        {
+            idleTimer?.Stop();
+            return;
+        }
+
         if (!IsInsideTree() || CurrentMenu == null)
             return;
 
