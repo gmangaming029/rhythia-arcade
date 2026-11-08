@@ -100,7 +100,6 @@ try {
         throw "Godot completed the export but did not create '$exportPath'."
     }
 
-    Set-Content -LiteralPath (Join-Path $stageDirectory "rhythia-free-play-default.txt") -Value "true" -NoNewline
     New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
     $stageContents = Get-ChildItem -LiteralPath $stageDirectory -Force
     Compress-Archive -Path $stageContents.FullName -DestinationPath $archivePath -Force

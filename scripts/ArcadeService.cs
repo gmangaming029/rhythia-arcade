@@ -23,7 +23,6 @@ public partial class ArcadeService : Node
     private CancellationTokenSource cancellation;
     private int credits;
     private bool freePlay;
-    private bool sessionFreePlayOverride;
     private bool persistenceAvailable = true;
 
     private sealed class PersistedState
@@ -80,7 +79,7 @@ public partial class ArcadeService : Node
         lock (stateLock)
         {
             isFreePlay = isFreePlayEnabledLocked();
-            if (!persistenceAvailable && !sessionFreePlayOverride)
+            if (!persistenceAvailable && !freePlay)
             {
                 _ = ToastNotification.Notify("Arcade credit storage is unavailable. Map start cancelled.", 1);
                 return false;
@@ -476,6 +475,8 @@ public partial class ArcadeService : Node
 
     private void LoadState()
     {
+        freePlay = !OS.GetCmdlineUserArgs().Contains("--payplay", StringComparer.Ordinal);
+
         if (File.Exists(StatePath))
         {
             try
@@ -501,28 +502,9 @@ public partial class ArcadeService : Node
                 Logger.Error($"Unable to load saved arcade state; credit changes are disabled to protect the existing balance: {exception.Message}");
             }
         }
-
-        string executableDirectory = Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
-        string defaultFreePlayPath = Path.Combine(executableDirectory, "rhythia-free-play-default.txt");
-        try
-        {
-            sessionFreePlayOverride = File.ReadAllText(defaultFreePlayPath) == "true";
-        }
-        catch (FileNotFoundException)
-        {
-            sessionFreePlayOverride = false;
-        }
-        catch (DirectoryNotFoundException)
-        {
-            sessionFreePlayOverride = false;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            Logger.Error($"Unable to read the default free-play marker: {exception.Message}");
-        }
     }
 
-    private bool isFreePlayEnabledLocked() => freePlay || sessionFreePlayOverride;
+    private bool isFreePlayEnabledLocked() => freePlay;
 
     private bool saveStateLocked()
     {

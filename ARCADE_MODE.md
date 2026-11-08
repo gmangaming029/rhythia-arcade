@@ -6,7 +6,13 @@ The arcade integration runs inside the native Godot client. It does not use a br
 
 Run `.\package.ps1` in PowerShell to build and export the configured **Windows Desktop** preset to `build\packages\windows.zip`. The script uses the project's bundled Godot .NET executable at `.godot-sdk\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64.exe`; the matching Windows export templates and an export preset named `Windows Desktop` in `export_presets.cfg` are also required. Use `-Preset`, `-ExportFileName`, or `-ArchiveName` to change the preset, executable name, or ZIP name.
 
-The package includes `rhythia-free-play-default.txt` beside the executable with the exact contents `true` (no newline). When this file contains exactly `true`, free play is forced on for that session, even if saved arcade state disables it. The override is not saved to `arcade-state.json`; removing or changing the marker takes effect on the next launch. Running the project from the editor does not use the packaged default.
+Free play is enabled by default on a fresh install. To start in paid-play mode, pass `--payplay` as a user argument after Godot's `--` separator:
+
+```powershell
+.\Rhythia.exe -- --payplay
+```
+
+An existing `arcade-state.json` setting takes precedence over this default. The `--payplay` argument sets free play to off only when no saved arcade state exists.
 
 ## Local API
 
