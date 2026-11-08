@@ -1,0 +1,97 @@
+name: Build and Publish Godot Project
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.6.1"
+  DOTNET_VERSION: "10.0.402"
+  PROJECT_NAME: "MyGodotGame"
+
+jobs:
+  build:
+    name: Build Godot Project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.402
+
+      - name: Install Godot .NET
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.1
+          use-dotnet: true
+          include-templates: true
+
+      - name: Verify Environment
+        run: |
+          godot --version
+          dotnet --info
+      - name: Restore Dependencies
+        run: dotnet restore ./Rhythia.csproj
+
+      - name: Generate Godot C# Bindings
+        run: godot --headless --editor --path . --build-solutions --quit
+
+      - name: Build C# Project
+        run: dotnet build ./Rhythia.csproj --configuration Release --no-restore
+
+      - name: Create Export Directories
+        run: |
+          mkdir -p build/windows
+          mkdir -p build/linux
+          mkdir -p build/macos
+
+      - name: Export Windows
+        run: |
+          godot --headless --path . \
+            --export-release "Windows Desktop" \
+            "build/windows/${PROJECT_NAME}.exe"
+
+#      - name: Export Linux
+#        run: |
+#          godot --headless --path . \
+#           --export-release "Linux/X11" \
+#            "build/linux/${PROJECT_NAME}.x86_64"
+
+#      - name: Export macOS
+#        run: |
+#          godot --headless --path . \
+#            --export-release "macOS" \
+#            "build/macos/${PROJECT_NAME}.app"
+
+      - name: Package Builds
+        run: |
+          cd build
+
+          zip -r "${PROJECT_NAME}-Windows.zip" windows/
+          zip -r "${PROJECT_NAME}-Linux.zip" linux/
+          zip -r "${PROJECT_NAME}-macOS.zip" macos/
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Godot-Builds
+          path: build/*.zip
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: build/*.zip
