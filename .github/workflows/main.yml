@@ -68,11 +68,11 @@ jobs:
 #           --export-release "Linux/X11" \
 #            "build/linux/${PROJECT_NAME}.x86_64"
 
-      - name: Export macOS
-        run: |
-          godot --headless --path . \
-            --export-release "macOS" \
-            "build/macos/${PROJECT_NAME}.app"
+#      - name: Export macOS
+#        run: |
+#          godot --headless --path . \
+#            --export-release "macOS" \
+#            "build/macos/${PROJECT_NAME}.app"
 
       - name: Package Builds
         run: |
