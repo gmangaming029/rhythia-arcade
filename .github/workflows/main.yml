@@ -62,11 +62,11 @@ jobs:
             --export-release "Windows Desktop" \
             "build/windows/${PROJECT_NAME}.exe"
 
-      - name: Export Linux
-        run: |
-          godot --headless --path . \
-            --export-release "Linux/X11" \
-            "build/linux/${PROJECT_NAME}.x86_64"
+#      - name: Export Linux
+#        run: |
+#          godot --headless --path . \
+#           --export-release "Linux/X11" \
+#            "build/linux/${PROJECT_NAME}.x86_64"
 
       - name: Export macOS
         run: |
