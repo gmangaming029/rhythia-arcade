@@ -42,15 +42,14 @@ jobs:
         run: |
           godot --version
           dotnet --info
-
-      - name: Restore Dependencies
-        run: dotnet restore
+- name: Restore Dependencies
+  run: dotnet restore ./Rhythia.csproj
 
       - name: Generate Godot C# Bindings
         run: godot --headless --editor --path . --build-solutions --quit
 
-      - name: Build C# Project
-        run: dotnet build --configuration Release --no-restore
+- name: Build C# Project
+  run: dotnet build ./Rhythia.csproj --configuration Release --no-restore
 
       - name: Create Export Directories
         run: |
