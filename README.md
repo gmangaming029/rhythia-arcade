@@ -1,3 +1,5 @@
+this build of rhythia is not affiliated with the origonal rhythia rewrite, this build adds features that i like
+
 <p align="center">
   <img src="https://github.com/Rhythia/Client/blob/master/textures/RhythiaSquircle.png?raw=true" alt="Rhythia" width="400"/>
 </p>
