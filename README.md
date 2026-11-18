@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/Rhythia/Client/blob/master/textures/RhythiaSquircle.png?raw=true" alt="Rhythia" width="400"/>
+  <img src="textures/RhythiaSquircle.png" alt="Rhythia" width="400"/>
 </p>
 
 <h3 align="center">A free-to-play rhythm game where you move your mouse across a 3×3 grid.</h3>
@@ -34,6 +34,7 @@
 - [Development](#development)
   - [Prerequisites](#prerequisites)
   - [Project Structure](#project-structure)
+  - [Common Changes](#common-changes)
 - [Contributing](#contributing)
 
 ---
@@ -94,7 +95,7 @@ You can view Nightly's source code [here](https://github.com/David20122/sound-sp
 3. Run `Rhythia.exe`.
 
 > [!WARNING]
-> You **must** have the [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) installed to run the game on Windows!
+> You **might need to** have the [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) installed to run the game on Windows!
 
 ### Linux
 
@@ -226,6 +227,20 @@ Maps aren't included in the game by default; they must be downloaded and importe
 └── user/            # Default user data scaffold
 ```
 
+### Common Changes
+
+| To change | Edit |
+|---|---|
+| Game version shown in the menu and used for release-note links | `project.godot` → `[application]` → `config/version` |
+| Project/display name | `project.godot` → `[application]` → `config/name` |
+| Application and exported-game icon | Replace `textures/icon.svg` or set `config/icon` in `project.godot` → `[application]` to another imported image |
+| README header logo | Replace `textures/RhythiaSquircle.png`, or update the image source near the top of `README.md` |
+| Godot engine version used to build the project | `Rhythia.csproj` → `Godot.NET.Sdk` version |
+| Minimum Godot feature version advertised by the project | `project.godot` → `[application]` → `config/features` |
+| Bundled default user files | Add or edit files under `user/` |
+
+The menu's version label and release-notes link read `config/version` from `project.godot`; update that value instead of changing the UI scripts.
+
 ---
 
 ## Contributing
@@ -233,7 +248,7 @@ Maps aren't included in the game by default; they must be downloaded and importe
 We ❤️ developers! Contributions are welcome — whether it's bug fixes, features, documentation, or translations.
 
 > [!WARNING]
-> **Nightly is no longer actively maintained.** This guide is for contributing to the **Rewrite** client. The contribution process is the same, but you'll be working with the [Rewrite repository](https://github.com/Rhythia/Client).
+> **this client is a fork of the rhthia rewrite**(https://github.com/Rhythia/Client).
 
 ### Required Software
 
@@ -322,3 +337,4 @@ dotnet tool restore
 ## License
 
 Rhythia is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+rhythia arcade is also licensed under the [GNU Affero General Public License v3.0](LICENSE)

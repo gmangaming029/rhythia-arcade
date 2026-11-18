@@ -25,6 +25,7 @@ public partial class MapInfoContainer : Panel, ISkinnable
     private RichTextLabel chartDetailsLabel;
     private ScrollContainer chartDetailsScroll;
     private bool chartDetailsExpanded;
+    private Tween chartDetailsTween;
 
     [Export]
     private ColorRect dim;
@@ -548,7 +549,13 @@ public partial class MapInfoContainer : Panel, ISkinnable
             toggleLeaderboard(false);
         }
 
+        if (chartDetailsTween?.IsRunning() == true)
+        {
+            chartDetailsTween.Kill();
+        }
+
         Tween tween = CreateTween().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic).SetParallel();
+        chartDetailsTween = tween;
         tween.TweenProperty(info, "anchor_bottom", expanded ? 1f : 0.4f, 0.35);
         tween.TweenProperty(info, "offset_bottom", expanded ? 0f : -8f, 0.35);
         infoScrollContainer.AnchorBottom = expanded ? 0.4f : 1f;
