@@ -235,7 +235,7 @@ Maps aren't included in the game by default; they must be downloaded and importe
 |---|---|
 | Game version shown in the menu and used for release-note links | `project.godot` → `[application]` → `config/version` |
 | Project/display name | `project.godot` → `[application]` → `config/name` |
-| Application and exported-game icon | Replace `textures/icon.svg` or set `config/icon` in `project.godot` → `[application]` to another imported image |
+| Application and exported-game icon | Replace `textures/RhythiaSquircle.png` and run `powershell -NoProfile -ExecutionPolicy Bypass -File ".\Regenerate Icon.ps1"` to rebuild `textures/icon.ico`; the project icon uses the PNG and the Windows export uses the ICO |
 | README header logo | Replace `textures/RhythiaSquircle.png`, or update the image source near the top of `README.md` |
 | Godot engine version used to build the project | `Rhythia.csproj` → `Godot.NET.Sdk` version |
 | Minimum Godot feature version advertised by the project | `project.godot` → `[application]` → `config/features` |
