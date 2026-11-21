@@ -14,6 +14,7 @@ public partial class PanelLeft : UIComponent
     private Label score,
         multiplier;
     private Label altCombo;
+    private SidePanelLayout panelLayout;
 
     public override void _ExitTree()
     {
@@ -46,6 +47,25 @@ public partial class PanelLeft : UIComponent
         }
 
         altCombo.Visible = isVisible && Runner.Attempt.Settings.AltComboCounter;
+
+        foreach (Node widget in viewport.GetChildren())
+        {
+            if (widget is not Control control || control.Name == "Background")
+                continue;
+
+            string key = $"Left/{control.Name}";
+            SidePanelLayout.CaptureDefault(key, control, viewport, visible: true);
+        }
+
+        panelLayout = SidePanelLayout.Load();
+        foreach (Node widget in viewport.GetChildren())
+        {
+            if (widget is not Control control || control.Name == "Background")
+                continue;
+
+            bool allowVisible = isVisible && (control != altCombo || Runner.Attempt.Settings.AltComboCounter);
+            panelLayout.Apply($"Left/{control.Name}", control, viewport, allowVisible);
+        }
     }
 
     public override void _PhysicsProcess(double delta)

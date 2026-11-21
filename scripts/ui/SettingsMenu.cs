@@ -208,6 +208,8 @@ public partial class SettingsMenu : ColorRect
             settingTemplate.QueueFree();
         }
 
+        addHudLayoutButton();
+
         Logger.Log($"SETTINGS MENU: {(Time.GetTicksUsec() - start) / 1000}ms");
 
         HideMenu();
@@ -287,6 +289,56 @@ public partial class SettingsMenu : ColorRect
 
         selectedCategory.Visible = true;
         sidebar.GetNode<ColorRect>(new(selectedCategory.Name)).Color = Color.Color8(255, 255, 255, 8);
+    }
+
+    private void addHudLayoutButton()
+    {
+        Panel source = settingPanels["CenterMainMenuButtons"];
+        Panel row = source.Duplicate() as Panel;
+        row.Name = "SidePanelLayoutEditor";
+        row.GetNode<Label>("Title").Text = "HUD Side Panel Layout";
+        row.GetNode<Label>("Title").TooltipText = "Customize the position, size, and visibility of the gameplay side panel widgets";
+
+        CheckButton oldCheckButton = row.GetNode<CheckButton>("CheckButton");
+        row.RemoveChild(oldCheckButton);
+        oldCheckButton.QueueFree();
+
+        Button editButton = new()
+        {
+            Text = "EDIT",
+            AnchorLeft = 0.7f,
+            AnchorRight = 1,
+            AnchorBottom = 1,
+            OffsetTop = 4,
+            OffsetRight = -4,
+            OffsetBottom = -4,
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            Theme = source.GetNode<CheckButton>("CheckButton").Theme,
+        };
+        editButton.Pressed += openHudLayoutEditor;
+        row.AddChild(editButton);
+
+        categories.GetNode<ScrollContainer>("Visual").GetNode<VBoxContainer>("Container").AddChild(row);
+    }
+
+    private void openHudLayoutEditor()
+    {
+        if (Game.Instance?.Runner?.Attempt == null)
+        {
+            Logger.Log("HUD layout editor is available while a game is paused.");
+            return;
+        }
+
+        HideMenu();
+        SidePanelLayoutEditor editor = new() { Name = "SidePanelLayoutEditor" };
+        AddChild(editor);
+        editor.Closed += () =>
+        {
+            editor.QueueFree();
+            ShowMenu();
+        };
+        editor.OpenEditor(Game.Instance.Runner.HudManager);
     }
 
     public void UpdateProfileSelection()

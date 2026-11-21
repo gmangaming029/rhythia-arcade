@@ -14,7 +14,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="Rhythia"
+config/name="Rhythia arcade"
 config/version="arcade public playtesting 1.0.0"
 run/main_scene="uid://cyrs54b4ot1p8"
 config/use_custom_user_dir=true
@@ -32,11 +32,11 @@ buses/default_bus_layout="uid://byxtiup0hs2og"
 [autoload]
 
 Constants="*res://scripts/Constants.cs"
-FileInitializer="*uid://dp48xgqpesoue"
-DatabaseService="*uid://c4t8bmpg1wmnv"
+FileInitializer="*res://scripts/FileInitializer.cs"
+DatabaseService="*res://scripts/database/DatabaseService.cs"
 SettingsManager="*res://scripts/SettingsManager.cs"
 SkinManager="*res://scripts/skinning/SkinManager.cs"
-MapManager="*uid://4by8r55q4bwn"
+MapManager="*res://scripts/map/MapManager.cs"
 KeybindsManager="*res://scripts/KeybindsManager.cs"
 Rhythia="*res://scripts/Rhythia.cs"
 Lobby="*res://scripts/multiplayer/Lobby.cs"

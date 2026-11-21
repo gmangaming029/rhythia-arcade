@@ -177,6 +177,10 @@ Add an optional `warning.ogv` and/or `intro.ogv` file to the selected skin folde
 
 Choose **Background Editor** from the top menu to preview and edit the selected menu or game background. Select scene objects to adjust their position, rotation, and scale; add colored box, sphere, cylinder, or quad meshes; or hide existing objects. Save changes per background, or reset that background to its original layout. Layouts are stored in the Rhythia user folder.
 
+### Side Panel Layout Editor
+
+Pause a game, open **Settings** → **Visual**, and select **HUD Side Panel Layout** to customize the side panels around the playfield. Select a widget from the list or click it in the preview, drag it to reposition, and adjust its position, size, or visibility. Save the layout to keep it across sessions, or reset it to the default arrangement. The layout is stored in `side-panel-layout.json` in the Rhythia user folder.
+
 ### Display Test
 
 Choose **Display Test** from the top menu to open full-screen color-bar, grayscale, geometry/safe-area, CRT convergence/overscan, and gameplay-readability patterns. Use the on-screen buttons, Left/Right, or keys 1-5 to switch patterns; press Escape to close. Use the same test on each monitor and compare readability, safe areas, and color detail.

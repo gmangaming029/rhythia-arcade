@@ -13,6 +13,7 @@ public partial class PanelRight : UIComponent
     private Tween missTween;
     private float hitOpacity = 0.62f;
     private float missOpacity = 0.62f;
+    private SidePanelLayout panelLayout;
 
     public override void _ExitTree()
     {
@@ -50,6 +51,25 @@ public partial class PanelRight : UIComponent
         }
 
         simpleMisses.Visible = !isVisible;
+
+        foreach (Node widget in viewport.GetChildren())
+        {
+            if (widget is not Control control || control.Name == "Background")
+                continue;
+
+            string key = $"Right/{control.Name}";
+            SidePanelLayout.CaptureDefault(key, control, viewport, visible: true);
+        }
+
+        panelLayout = SidePanelLayout.Load();
+        foreach (Node widget in viewport.GetChildren())
+        {
+            if (widget is not Control control || control.Name == "Background")
+                continue;
+
+            bool allowVisible = control == simpleMisses ? !isVisible : isVisible;
+            panelLayout.Apply($"Right/{control.Name}", control, viewport, allowVisible);
+        }
     }
 
     public override void _PhysicsProcess(double delta)
