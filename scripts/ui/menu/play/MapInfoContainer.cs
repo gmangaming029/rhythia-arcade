@@ -26,6 +26,7 @@ public partial class MapInfoContainer : Panel, ISkinnable
     private ScrollContainer chartDetailsScroll;
     private bool chartDetailsExpanded;
     private Tween chartDetailsTween;
+    private int chartDetailsTransitionVersion;
 
     [Export]
     private ColorRect dim;
@@ -380,6 +381,13 @@ public partial class MapInfoContainer : Panel, ISkinnable
 
     public override void _Input(InputEvent @event)
     {
+        // This panel receives global input even while its parent menu is hidden.
+        // Ignore clicks intended for other menus and overlays.
+        if (!IsVisibleInTree() || SettingsMenu.Instance?.Shown == true)
+        {
+            return;
+        }
+
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
         {
             switch (mouseButton.ButtonIndex)
@@ -414,6 +422,11 @@ public partial class MapInfoContainer : Panel, ISkinnable
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (!IsVisibleInTree() || SettingsMenu.Instance?.Shown == true)
+        {
+            return;
+        }
+
         if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Escape && chartDetailsExpanded)
         {
             setChartDetailsExpanded(false);
@@ -528,6 +541,18 @@ public partial class MapInfoContainer : Panel, ISkinnable
         return details;
     }
 
+    private void cancelChartDetailsTransition()
+    {
+        chartDetailsTransitionVersion++;
+
+        if (chartDetailsTween?.IsRunning() == true)
+        {
+            chartDetailsTween.Kill();
+        }
+
+        chartDetailsTween = null;
+    }
+
     private void setChartDetailsExpanded(bool expanded)
     {
         if (chartDetailsExpanded == expanded || Map == null)
@@ -536,6 +561,7 @@ public partial class MapInfoContainer : Panel, ISkinnable
         }
 
         chartDetailsExpanded = expanded;
+        int transitionVersion = ++chartDetailsTransitionVersion;
 
         if (expanded)
         {
@@ -553,6 +579,7 @@ public partial class MapInfoContainer : Panel, ISkinnable
         {
             chartDetailsTween.Kill();
         }
+        chartDetailsTween = null;
 
         Tween tween = CreateTween().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic).SetParallel();
         chartDetailsTween = tween;
@@ -571,10 +598,17 @@ public partial class MapInfoContainer : Panel, ISkinnable
             tween.TweenCallback(
                 Callable.From(() =>
                 {
+                    // A map switch or a newer expand/collapse request can supersede this tween.
+                    if (transitionVersion != chartDetailsTransitionVersion || !IsInsideTree())
+                    {
+                        return;
+                    }
+
                     chartDetailsPanel.Visible = false;
                     info.ZIndex = 0;
                     actions.Visible = true;
                     leaderboard.Visible = !chartDetailsExpanded && Leaderboard.Valid && Leaderboard.ScoreCount > 0;
+                    chartDetailsTween = null;
                 })
             );
         }
@@ -589,6 +623,17 @@ public partial class MapInfoContainer : Panel, ISkinnable
         {
             return;
         }
+
+        cancelChartDetailsTransition();
+        chartDetailsExpanded = false;
+        chartDetailsPanel.Visible = false;
+        chartDetailsPanel.Modulate = Colors.Transparent;
+        info.ZIndex = 0;
+        info.AnchorBottom = 0.4f;
+        info.OffsetBottom = -8f;
+        infoScrollContainer.AnchorBottom = 1f;
+        actions.Visible = true;
+        lbHide.Visible = false;
 
         Map = map;
         Name = map.Name;
@@ -702,6 +747,17 @@ public partial class MapInfoContainer : Panel, ISkinnable
 
     public Tween Transition(bool show)
     {
+        if (!show)
+        {
+            cancelChartDetailsTransition();
+            chartDetailsExpanded = false;
+            if (IsInstanceValid(chartDetailsPanel))
+            {
+                chartDetailsPanel.Visible = false;
+                chartDetailsPanel.Modulate = Colors.Transparent;
+            }
+        }
+
         Tween tween = CreateTween().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic).SetParallel();
         float time = show ? 0.4f : 0.3f;
 
