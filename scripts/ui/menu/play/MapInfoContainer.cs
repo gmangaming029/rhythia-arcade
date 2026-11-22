@@ -388,35 +388,9 @@ public partial class MapInfoContainer : Panel, ISkinnable
             return;
         }
 
-        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
+        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Right)
         {
-            switch (mouseButton.ButtonIndex)
-            {
-                case MouseButton.Left:
-                    if (
-                        chartDetailsExpanded
-                        || Map == null
-                        || !info.GetGlobalRect().HasPoint(mouseButton.GlobalPosition)
-                    )
-                    {
-                        break;
-                    }
-
-                    foreach (Button button in new[] { artistLink, exportButton, favoriteButton, videoButton, copyButton, deleteButton })
-                    {
-                        if (button.Visible && !button.Disabled && button.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
-                        {
-                            return;
-                        }
-                    }
-
-                    setChartDetailsExpanded(true);
-                    GetViewport().SetInputAsHandled();
-                    break;
-                case MouseButton.Right:
-                    toggleLeaderboard(false);
-                    break;
-            }
+            toggleLeaderboard(false);
         }
     }
 
@@ -436,11 +410,27 @@ public partial class MapInfoContainer : Panel, ISkinnable
 
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
         {
-            switch (mouseButton.ButtonIndex)
+            if (mouseButton.ButtonIndex == MouseButton.Left)
             {
-                case MouseButton.Left:
-                    toggleLeaderboard(false);
-                    break;
+                if (
+                    chartDetailsExpanded
+                    || Map == null
+                    || !info.GetGlobalRect().HasPoint(mouseButton.GlobalPosition)
+                )
+                {
+                    return;
+                }
+
+                foreach (Button button in new[] { artistLink, exportButton, favoriteButton, videoButton, copyButton, deleteButton })
+                {
+                    if (button.Visible && !button.Disabled && button.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
+                    {
+                        return;
+                    }
+                }
+
+                setChartDetailsExpanded(true);
+                GetViewport().SetInputAsHandled();
             }
         }
     }
