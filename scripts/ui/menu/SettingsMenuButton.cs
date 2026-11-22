@@ -5,6 +5,6 @@ public partial class SettingsMenuButton : Button
 {
     public override void _Pressed()
     {
-        SettingsMenu.Instance.ShowMenu();
+        SettingsMenu.Instance.CallDeferred("ShowMenu");
     }
 }
