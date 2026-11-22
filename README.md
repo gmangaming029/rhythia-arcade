@@ -65,8 +65,8 @@ You can view all releases on the [Rewrite releases page](https://github.com/Rhyt
 
 | Platform | Direct Download |
 |---|---|
-| **Windows** | [Download](https://github.com/Rhythia/Client/releases/latest/download/windows.zip) |
-| **Linux** | [Download](https://github.com/Rhythia/Client/releases/latest/download/linux.zip) |
+| **Windows** | [Download](https://github.com/gmangaming029/rhythia-arcade/releases/download/playtesting/windows.zip) |
+| **Linux** | rhythia-arcade currently does not have a linux release |
 
 You can view the Rewrite source code [here](https://github.com/Rhythia/Client).
 
