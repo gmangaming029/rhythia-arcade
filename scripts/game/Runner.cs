@@ -518,6 +518,13 @@ public partial class Runner : Node3D
                 );
                 leaderboard.Save();
 
+                bool isPersonalBest = Attempt.Qualifies && Attempt.Score > previousTopScore;
+                bool isLocalLeaderboardFirst = Attempt.Qualifies
+                    && Leaderboard.TryRead($"{Constants.USER_FOLDER}/pbs/{Attempt.Map.Name}", out List<Leaderboard.Score> scores)
+                    && scores.Count > 0
+                    && scores[0].AttemptID == Attempt.ID;
+                AchievementSystem.Instance?.RecordAttempt(Attempt, isPersonalBest, isLocalLeaderboardFirst);
+
                 if (Attempt.Qualifies && Attempt.Score > previousTopScore)
                 {
                     ArcadeService.Instance.AddCredits(1);
@@ -541,6 +548,11 @@ public partial class Runner : Node3D
 
                     Stats.Instance.AverageAccuracy = (Stats.Instance.AverageAccuracy + Attempt.Accuracy) / Stats.Instance.Passes;
                 }
+            }
+
+            if (!autoplayEnabled && Attempt.StartFrom != 0)
+            {
+                AchievementSystem.Instance?.RecordAttempt(Attempt, false, false);
             }
 
             Stats.Instance.ForceUpdate();
@@ -574,6 +586,8 @@ public partial class Runner : Node3D
             case HitResult.Hit:
                 Attempt.Hits++;
                 Attempt.Sum++;
+                if (!Attempt.IsReplay)
+                    AchievementSystem.Instance?.RecordGameplayInput();
                 Attempt.Accuracy = Math.Floor((float)Attempt.Hits / Attempt.Sum * 10000) / 100;
                 Attempt.Combo++;
                 Attempt.ComboMultiplierProgress++;
@@ -602,6 +616,8 @@ public partial class Runner : Node3D
             case HitResult.Miss:
                 Attempt.Misses++;
                 Attempt.Sum++;
+                if (!Attempt.IsReplay)
+                    AchievementSystem.Instance?.RecordGameplayInput();
                 Attempt.Accuracy = Mathf.Floor((float)Attempt.Hits / Attempt.Sum * 10000) / 100;
                 Attempt.Combo = 0;
                 Attempt.ComboMultiplierProgress = 0;

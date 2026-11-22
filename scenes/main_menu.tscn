@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://do18270a428ma"]
 
+; Scene scripts, shared shaders, fonts, themes, and UI textures.
 [ext_resource type="Shader" uid="uid://c7ldko1kfg2ho" path="res://scripts/shaders/noise_waves.gdshader" id="1_3wgol"]
 [ext_resource type="Script" uid="uid://j2paynyu362u" path="res://scripts/scenes/MainMenu.cs" id="1_yxnar"]
 [ext_resource type="Script" uid="uid://dluebshtuc3vx" path="res://scripts/ui/menu/ImportDialog.cs" id="2_yxnar"]
@@ -57,6 +58,7 @@
 [ext_resource type="Texture2D" uid="uid://8du82a5dxjdk" path="res://user/skins/default/ui/jukebox_play.png" id="48_q1l3m"]
 [ext_resource type="Texture2D" uid="uid://bpsvcunhigs6c" path="res://user/skins/default/ui/jukebox_skip.png" id="49_7u5pb"]
 
+; Fallback font and theme resources used by the menu and file dialogs.
 [sub_resource type="SystemFont" id="SystemFont_lsskb"]
 font_names = PackedStringArray("Ubuntu")
 subpixel_positioning = 0
@@ -70,6 +72,7 @@ shader = ExtResource("1_3wgol")
 shader_parameter/window_position = Vector2(0, 0)
 shader_parameter/opaqueness = 1.0
 
+; Transparent panel styles prevent the menu containers from drawing extra backgrounds.
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bl404"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tkeab"]
@@ -100,6 +103,7 @@ bg_color = Color(1, 1, 1, 1)
 font = ExtResource("5_hl5e0")
 font_size = 36
 
+; Main-button theme and scrollbar styles.
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_k5xsf"]
 content_margin_left = 4.0
 content_margin_right = 4.0
@@ -180,6 +184,7 @@ corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6pifw"]
 
+; Map-browser and panel blur styles.
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_q13xq"]
 shader = ExtResource("4_1a85y")
 shader_parameter/brightness = 1.0
@@ -196,6 +201,7 @@ void vertex() {
 	UV.x -= TIME;
 }"
 
+; Horizontally moving texture shader used on the map-list background.
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_eku7s"]
 shader = SubResource("Shader_1a85y")
 
@@ -264,6 +270,7 @@ font = ExtResource("19_c6nra")
 [sub_resource type="LabelSettings" id="LabelSettings_5pcip"]
 font = ExtResource("7_6h3lr")
 
+; Outline shader and border used to highlight interactive panels.
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yxnar"]
 shader = ExtResource("30_q13xq")
 shader_parameter/outline_color = Color(0.05, 0.05, 0.05, 1)
@@ -300,6 +307,7 @@ content_margin_bottom = 4.0
 shader = ExtResource("4_1a85y")
 shader_parameter/brightness = 0.5
 
+; Jukebox progress, label shadows, and notification colors.
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_engjn"]
 shader = ExtResource("27_engjn")
 shader_parameter/color_fill = Color(0.7882353, 0, 0.27058825, 1)
@@ -359,10 +367,12 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+; Main scene controller; manages menu state and shared behavior.
 [node name="SceneMenu" type="Node" unique_id=22657833]
 script = ExtResource("1_yxnar")
 UseMenuSpace = true
 
+; Native file picker used to attach a video to a map.
 [node name="VideoDialog" type="FileDialog" parent="." unique_id=1304771911]
 auto_translate_mode = 1
 title = "Open a File"
@@ -374,6 +384,7 @@ file_mode = 0
 access = 2
 use_native_dialog = true
 
+; Full-screen animated background used behind all menus.
 [node name="Background" type="ColorRect" parent="." unique_id=1217307991]
 visible = false
 material = SubResource("ShaderMaterial_2672j")
@@ -385,6 +396,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0235294, 0.0196078, 0.0352941, 1)
 
+; Container for the Home, Play, and Extras menu pages.
 [node name="Menus" type="Panel" parent="." unique_id=169021205]
 anchors_preset = 15
 anchor_right = 1.0
@@ -394,6 +406,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_bl404")
 
+; Home page with release news and the primary navigation buttons.
 [node name="Home" type="Panel" parent="Menus" unique_id=160147629]
 layout_mode = 1
 anchors_preset = 15
@@ -404,6 +417,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_tkeab")
 
+; Release-news panel showing the current build and patch notes.
 [node name="News" type="PanelContainer" parent="Menus/Home" unique_id=1879796237]
 visible = false
 material = SubResource("ShaderMaterial_dr6yk")
@@ -463,6 +477,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_5gt56")
 
+; Primary Home-page actions.
 [node name="Buttons" type="VBoxContainer" parent="Menus/Home" unique_id=695816730]
 layout_mode = 1
 anchors_preset = -1
@@ -476,6 +491,7 @@ alignment = 1
 [node name="MarginContainer" type="MarginContainer" parent="Menus/Home/Buttons" unique_id=1192566578]
 layout_mode = 2
 
+; Opens the map-selection menu.
 [node name="Play" type="Button" parent="Menus/Home/Buttons/MarginContainer" unique_id=621731251]
 layout_mode = 2
 focus_mode = 0
@@ -491,6 +507,7 @@ alignment = 0
 [node name="MarginContainer2" type="MarginContainer" parent="Menus/Home/Buttons" unique_id=677178319]
 layout_mode = 2
 
+; Opens the application settings menu.
 [node name="Settings" type="Button" parent="Menus/Home/Buttons/MarginContainer2" unique_id=1066091631]
 layout_mode = 2
 focus_mode = 0
@@ -508,6 +525,7 @@ script = ExtResource("8_yxnar")
 layout_mode = 2
 theme_override_constants/margin_right = 100
 
+; Opens statistics and contributor information.
 [node name="Extras" type="Button" parent="Menus/Home/Buttons/MarginContainer3" unique_id=728550159]
 layout_mode = 2
 focus_mode = 0
@@ -524,6 +542,7 @@ alignment = 0
 layout_mode = 2
 theme_override_constants/margin_right = 100
 
+; Shows or hides the release-news panel.
 [node name="ReleaseNotes" type="Button" parent="Menus/Home/Buttons/MarginContainer4" unique_id=645519198]
 layout_mode = 2
 focus_mode = 0
@@ -542,6 +561,7 @@ Link = "https://github.com/Rhythia/Client/releases/tag/{0}"
 layout_mode = 2
 theme_override_constants/margin_right = 100
 
+; Closes the application.
 [node name="Quit" type="Button" parent="Menus/Home/Buttons/MarginContainer5" unique_id=87671349]
 layout_mode = 2
 focus_mode = 0
@@ -555,6 +575,7 @@ text = "QUIT"
 alignment = 0
 script = ExtResource("9_yxnar")
 
+; Map-browser page containing the map list, details, and search controls.
 [node name="Play" type="Panel" parent="Menus" unique_id=91213776]
 visible = false
 modulate = Color(1, 1, 1, 0)
@@ -591,6 +612,7 @@ texture = ExtResource("10_ybca7")
 expand_mode = 1
 stretch_mode = 1
 
+; Scrollable collection of available maps.
 [node name="MapList" type="Panel" parent="Menus/Play" unique_id=57262844]
 layout_mode = 1
 anchors_preset = -1
@@ -606,6 +628,7 @@ theme = ExtResource("6_engjn")
 script = ExtResource("12_yxnar")
 SquareButtonHoveredSize = 10.0
 
+; Custom scrollbar track and handle for the map list.
 [node name="ScrollBar" type="Panel" parent="Menus/Play/MapList" unique_id=778751162]
 z_index = 1
 layout_mode = 1
@@ -705,6 +728,7 @@ grow_vertical = 2
 texture = ExtResource("18_41a2d")
 expand_mode = 1
 
+; Highlights the currently selected map.
 [node name="SelectionCursor" type="TextureRect" parent="Menus/Play/MapList" unique_id=370766884]
 modulate = Color(1, 1, 1, 0)
 self_modulate = Color(0.7921569, 0, 0.27450982, 1)
@@ -719,7 +743,12 @@ mouse_filter = 2
 texture = ExtResource("19_f5cck")
 expand_mode = 1
 
+; Displays cover artwork and details for the selected map.
 [node name="MapInfo" type="AspectRatioContainer" parent="Menus/Play" unique_id=140630444]
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+corner_radius_top_left = 16
+corner_radius_top_right = 16
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.05
@@ -739,6 +768,7 @@ size_flags_vertical = 4
 mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBoxEmpty_c6nra")
 
+; Map-browser toolbar for settings, importing, random selection, layout, filtering, and search.
 [node name="SubTopBar" type="Panel" parent="Menus/Play" unique_id=1459712401]
 layout_mode = 1
 anchors_preset = -1
@@ -761,6 +791,7 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 2
 
+; Opens settings from the map-browser toolbar.
 [node name="Settings" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=384311335]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -773,6 +804,7 @@ text = "Settings"
 icon = ExtResource("21_s4ogs")
 script = ExtResource("8_yxnar")
 
+; Opens the user's map and data folder.
 [node name="UserFolder" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=1212420658]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -784,6 +816,7 @@ text = "User Folder"
 icon = ExtResource("22_ew011")
 script = ExtResource("27_eku7s")
 
+; Imports a new map archive or folder.
 [node name="Import" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=554381373]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -808,6 +841,7 @@ filters = PackedStringArray("*.sspm", "*.phxm", "*.txt", "*.rhm")
 use_native_dialog = true
 script = ExtResource("2_yxnar")
 
+; Randomly selects an available map.
 [node name="Random" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=1089194663]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -836,6 +870,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 1, 1, 0.1254902)
 
+; Switches the map-list layout.
 [node name="Layout" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=321417104]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -846,6 +881,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 icon = ExtResource("16_6h3lr")
 script = ExtResource("17_dj67d")
 
+; Opens or toggles map filtering options.
 [node name="Filters" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=834884660]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -856,6 +892,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 disabled = true
 icon = ExtResource("31_5053t")
 
+; Opens the map sort menu and controls ascending or descending order.
 [node name="Sort" type="Button" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=1032136468 node_paths=PackedStringArray("panel", "order", "orderLabel", "buttons")]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -965,6 +1002,7 @@ theme_override_constants/icon_max_width = 24
 text = "Mappers"
 icon_alignment = 1
 
+; Filters maps by mapper or author name.
 [node name="SearchAuthor" type="Panel" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=1189820153]
 custom_minimum_size = Vector2(150, 36)
 layout_mode = 2
@@ -1007,6 +1045,7 @@ texture = ExtResource("33_b56yx")
 expand_mode = 2
 stretch_mode = 4
 
+; Filters maps by title or search text.
 [node name="Search" type="Panel" parent="Menus/Play/SubTopBar/HBoxContainer" unique_id=748924632]
 custom_minimum_size = Vector2(220, 36)
 layout_mode = 2
@@ -1048,6 +1087,7 @@ texture = ExtResource("34_h5mb6")
 expand_mode = 2
 stretch_mode = 4
 
+; Extras page containing links, player statistics, and contributors.
 [node name="Extras" type="Panel" parent="Menus" unique_id=167704793]
 visible = false
 modulate = Color(1, 1, 1, 0)
@@ -1085,6 +1125,7 @@ texture = ExtResource("10_ybca7")
 expand_mode = 1
 stretch_mode = 1
 
+; Link to the Sound Space project and its website.
 [node name="SoundSpace" type="Button" parent="Menus/Extras" unique_id=1014465213]
 layout_mode = 1
 anchors_preset = -1
@@ -1147,6 +1188,7 @@ flat = true
 script = ExtResource("44_ybca7")
 Link = "https://www.roblox.com/games/2677609345/Sound-Space"
 
+; Scrollable player and gameplay statistics.
 [node name="Stats" type="Panel" parent="Menus/Extras" unique_id=1641203527]
 custom_minimum_size = Vector2(400, 400)
 layout_mode = 1
@@ -1182,6 +1224,7 @@ text = "STATISTICS"
 label_settings = SubResource("LabelSettings_5g0q6")
 horizontal_alignment = 1
 
+; Scrollable area for the individual stat rows.
 [node name="ScrollContainer" type="ScrollContainer" parent="Menus/Extras/Stats" unique_id=1695399179]
 layout_mode = 1
 anchors_preset = -1
@@ -1647,6 +1690,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_eku7s")
 
+; Credits panel listing project contributors.
 [node name="Contributors" type="Panel" parent="Menus/Extras" unique_id=1419690382]
 custom_minimum_size = Vector2(400, 400)
 layout_mode = 1
@@ -1826,6 +1870,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_eku7s")
 
+; Persistent top navigation bar shown on every menu page.
 [node name="TopBar" type="Panel" parent="." unique_id=560351556]
 anchors_preset = -1
 anchor_right = 1.0
@@ -1873,6 +1918,7 @@ shortcut_keys_enabled = false
 vertical_alignment = 1
 script = ExtResource("45_mb34c")
 
+; Buttons that switch between Home, Play, and Extras pages.
 [node name="MenuButtons" type="HBoxContainer" parent="TopBar" unique_id=1927365414]
 layout_mode = 1
 anchors_preset = -1
@@ -1907,6 +1953,7 @@ theme_override_font_sizes/font_size = 18
 text = "Extras"
 flat = true
 
+; External social links for GitHub and Discord.
 [node name="LinkButtons" type="HBoxContainer" parent="TopBar" unique_id=1020882602]
 layout_mode = 1
 anchors_preset = -1
@@ -1962,6 +2009,7 @@ flat = true
 script = ExtResource("44_ybca7")
 Link = "https://discord.gg/kaFPWkfZeS"
 
+; Persistent now-playing panel with track information and playback controls.
 [node name="JukeboxPanel" type="Panel" parent="." unique_id=1253575]
 clip_contents = true
 anchors_preset = -1
@@ -1986,6 +2034,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wadof")
 
+; Visual audio spectrum driven by the current music.
 [node name="Spectrum" type="Panel" parent="JukeboxPanel" unique_id=278726149]
 material = SubResource("ShaderMaterial_engjn")
 layout_mode = 1
@@ -2006,6 +2055,7 @@ MaxFreq = 6000
 BarMinSize = 1.0
 Align = 1.0
 
+; Displays and links to the currently playing track.
 [node name="Title" type="Label" parent="JukeboxPanel" unique_id=849405407]
 self_modulate = Color(1, 1, 1, 0.74509805)
 layout_mode = 1
@@ -2047,6 +2097,7 @@ mouse_default_cursor_shape = 2
 flat = true
 text_overrun_behavior = 3
 
+; Pauses or resumes jukebox playback.
 [node name="Pause" type="TextureButton" parent="JukeboxPanel" unique_id=1627542007]
 self_modulate = Color(1, 1, 1, 0.74509805)
 layout_mode = 1
@@ -2064,6 +2115,7 @@ texture_normal = ExtResource("48_q1l3m")
 ignore_texture_size = true
 stretch_mode = 5
 
+; Skips to the next jukebox track.
 [node name="Skip" type="TextureButton" parent="JukeboxPanel" unique_id=2044401727]
 self_modulate = Color(1, 1, 1, 0.74509805)
 layout_mode = 1
@@ -2081,6 +2133,7 @@ texture_normal = ExtResource("49_7u5pb")
 ignore_texture_size = true
 stretch_mode = 5
 
+; Rewinds or restarts the current jukebox track.
 [node name="Rewind" type="TextureButton" parent="JukeboxPanel" unique_id=1208395284]
 self_modulate = Color(1, 1, 1, 0.74509805)
 layout_mode = 1
@@ -2099,6 +2152,7 @@ ignore_texture_size = true
 stretch_mode = 5
 flip_h = true
 
+; Bottom-right stack for temporary on-screen notifications.
 [node name="NotificationHolder" type="VBoxContainer" parent="." unique_id=2124523142]
 anchors_preset = 3
 anchor_left = 1.0
@@ -2114,6 +2168,7 @@ grow_vertical = 0
 mouse_filter = 2
 alignment = 2
 
+; Popup actions for the selected map: favorite, delete, or attach video.
 [node name="ContextMenu" type="Panel" parent="." unique_id=836062335]
 visible = false
 offset_right = 150.0
@@ -2192,6 +2247,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_sgh51")
 
+; Full-screen fade used during menu transitions.
 [node name="Transition" type="ColorRect" parent="." unique_id=86050768]
 self_modulate = Color(1, 1, 1, 0)
 z_index = 2

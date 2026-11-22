@@ -153,6 +153,9 @@ public struct Replay
                     case "HFlip":
                         Modifiers.Add(new HorizontalFlipModifier());
                         break;
+                    case "HardRock":
+                        Modifiers.Add(new HardRockModifier());
+                        break;
                     case "Spin":
                         CameraMode = new CameraSpin();
                         break;

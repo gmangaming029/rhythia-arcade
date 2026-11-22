@@ -38,6 +38,9 @@ public partial class MainMenu : BaseScene
     private DisplayTestOverlay displayTestOverlay;
     private BackgroundEditor backgroundEditor;
     private VBoxContainer homeButtons;
+    private Panel achievementOverlay;
+    private VBoxContainer achievementList;
+    private int easterEggClicks;
 
     public override void _Ready()
     {
@@ -60,6 +63,7 @@ public partial class MainMenu : BaseScene
         setupAttractMode();
         setupCampaignMenu();
         setupRepositoryBrowser();
+        setupAchievementMenu();
 
         CurrentMenu = HomeMenu;
         idleTimer?.Start();
@@ -80,7 +84,11 @@ public partial class MainMenu : BaseScene
 
             if (menu != null)
             {
-                button.Pressed += () => Transition(menu);
+                button.Pressed += () =>
+                {
+                    AchievementSystem.Instance?.RecordMenuButtonPress();
+                    Transition(menu);
+                };
             }
         }
 
@@ -139,6 +147,141 @@ public partial class MainMenu : BaseScene
         backgroundEditorButton.AddThemeFontSizeOverride("font_size", 18);
         backgroundEditorButton.Pressed += backgroundEditor.OpenEditor;
         topBarButtonsContainer.AddChild(backgroundEditorButton);
+    }
+
+    private void setupAchievementMenu()
+    {
+        Button topBarButton = new()
+        {
+            Name = "Achievements",
+            Text = "Achievements",
+            Flat = true,
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            Theme = topBarButtonsContainer.GetNode<Button>("Home").Theme,
+        };
+        topBarButton.AddThemeFontSizeOverride("font_size", 18);
+        topBarButton.Pressed += () =>
+        {
+            AchievementSystem.Instance?.RecordMenuButtonPress();
+            achievementOverlay.Visible = true;
+            refreshAchievementMenu();
+        };
+        topBarButtonsContainer.AddChild(topBarButton);
+
+        achievementOverlay = new Panel
+        {
+            Name = "AchievementsOverlay",
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Stop,
+        };
+        achievementOverlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        achievementOverlay.OffsetLeft = 180;
+        achievementOverlay.OffsetTop = 90;
+        achievementOverlay.OffsetRight = -180;
+        achievementOverlay.OffsetBottom = -50;
+        achievementOverlay.ZIndex = 100;
+        AddChild(achievementOverlay);
+
+        Panel background = new Panel { Name = "Background" };
+        background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        background.MouseFilter = Control.MouseFilterEnum.Ignore;
+        achievementOverlay.AddChild(background);
+
+        Button header = new()
+        {
+            Name = "Header",
+            Text = "ACHIEVEMENTS",
+            Flat = true,
+            FocusMode = Control.FocusModeEnum.None,
+        };
+        header.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopWide);
+        header.OffsetTop = 8;
+        header.OffsetBottom = 48;
+        header.Pressed += () =>
+        {
+            easterEggClicks++;
+            if (easterEggClicks >= 5)
+            {
+                AchievementSystem.Instance?.RecordEasterEgg();
+                easterEggClicks = 0;
+            }
+        };
+        achievementOverlay.AddChild(header);
+
+        Button close = new()
+        {
+            Name = "Close",
+            Text = "Close",
+            Flat = true,
+            FocusMode = Control.FocusModeEnum.None,
+        };
+        close.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
+        close.OffsetLeft = -90;
+        close.OffsetTop = 8;
+        close.OffsetRight = -12;
+        close.OffsetBottom = 44;
+        close.Pressed += () => achievementOverlay.Visible = false;
+        achievementOverlay.AddChild(close);
+
+        ScrollContainer scroll = new() { Name = "Scroll" };
+        scroll.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        scroll.OffsetTop = 52;
+        achievementOverlay.AddChild(scroll);
+        achievementList = new VBoxContainer { Name = "List" };
+        achievementList.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        scroll.AddChild(achievementList);
+
+        if (AchievementSystem.Instance != null)
+            AchievementSystem.Instance.AchievementUnlocked += _ => refreshAchievementMenu();
+    }
+
+    private void refreshAchievementMenu()
+    {
+        if (achievementList == null || AchievementSystem.Instance == null)
+            return;
+
+        foreach (Node child in achievementList.GetChildren())
+            child.QueueFree();
+
+        foreach (var category in AchievementSystem.AllDefinitions.GroupBy(definition => definition.Category))
+        {
+            Label categoryLabel = new()
+            {
+                Text = $"  {category.Key.ToUpper()}",
+                CustomMinimumSize = new Vector2(0, 32),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            achievementList.AddChild(categoryLabel);
+
+            foreach (AchievementSystem.AchievementDefinition definition in category)
+            {
+                bool unlocked = AchievementSystem.Instance.IsUnlocked(definition.Id);
+                Panel row = new() { CustomMinimumSize = new Vector2(0, 54) };
+                row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                achievementList.AddChild(row);
+
+                Label title = new()
+                {
+                    Text = unlocked || !definition.Secret ? definition.Name : "???",
+                    Position = new Vector2(16, 4),
+                    Size = new Vector2(300, 24),
+                };
+                row.AddChild(title);
+
+                Label description = new()
+                {
+                    Text = unlocked || !definition.Secret ? definition.Description : "Hidden achievement",
+                    Position = new Vector2(16, 26),
+                    Size = new Vector2(700, 24),
+                    Modulate = unlocked ? Colors.White : new Color(1, 1, 1, 0.55f),
+                };
+                row.AddChild(description);
+
+                if (unlocked)
+                    row.Modulate = new Color(0.7f, 1f, 0.7f);
+            }
+        }
     }
 
     private void setupRepositoryBrowser()
@@ -554,6 +697,7 @@ public partial class MainMenu : BaseScene
 
     private void resetIdleTimer()
     {
+        AchievementSystem.Instance?.ResetMenuIdleTimer();
         if (backgroundEditor?.IsOpen == true)
         {
             idleTimer?.Stop();

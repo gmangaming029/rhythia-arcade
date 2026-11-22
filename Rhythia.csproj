@@ -9,6 +9,7 @@
     <None Include=".editorconfig" />
     <EmbeddedResource Include="arcade-controller.html" LogicalName="Rhythia.arcade-controller.html" />
     <Compile Remove="services\**\*.cs" />
+    <Compile Remove="tools\quantum-editor-source\**\*.cs" />
   </ItemGroup>
   <PropertyGroup>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

@@ -251,6 +251,8 @@ public partial class Game : BaseScene
         var parsedMap = MapParser.Decode(map.FolderPath, Rhythia.AudioFilePath);
         if (!Rhythia.TempMode && replays == null && !ArcadeService.Instance.TryConsumeCredit())
             return;
+        if (!Rhythia.TempMode && replays == null)
+            AchievementSystem.Instance?.RecordGameStarted(!ArcadeService.Instance.FreePlay);
 
         if (campaignStage)
         {
@@ -288,6 +290,8 @@ public partial class Game : BaseScene
 
     public void Restart()
     {
+        if (Attempt != null)
+            AchievementSystem.Instance?.RecordRestart(Attempt.Map.Name);
         Runner.Fail();
         Runner.Stop(false);
 

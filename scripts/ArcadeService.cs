@@ -109,6 +109,8 @@ public partial class ArcadeService : Node
         }
 
         EmitSignal(SignalName.StateChanged, updatedCredits, isFreePlay);
+        if (!isFreePlay)
+            AchievementSystem.Instance?.RecordCreditsSpent(1);
         return true;
     }
 
